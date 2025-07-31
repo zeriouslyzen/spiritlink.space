@@ -289,11 +289,11 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                   )}
                   <div className="prose prose-invert max-w-none">
                     {message.role === 'assistant' ? (
-                      <ReactMarkdown 
-                        className="prose prose-invert max-w-none prose-headings:text-white prose-strong:text-white prose-em:text-white prose-code:text-purple-300 prose-pre:bg-gray-800 prose-pre:border prose-pre:border-gray-700"
-                      >
-                        {message.content}
-                      </ReactMarkdown>
+                      <div className="prose prose-invert max-w-none prose-headings:text-white prose-strong:text-white prose-em:text-white prose-code:text-purple-300 prose-pre:bg-gray-800 prose-pre:border prose-pre:border-gray-700">
+                        <ReactMarkdown>
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
                     ) : (
                       <p className="whitespace-pre-wrap">{message.content}</p>
                     )}

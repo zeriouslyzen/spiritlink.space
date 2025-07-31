@@ -377,11 +377,32 @@ html {
 /* Markdown styling for dark theme */
 .prose {
   color: white;
+  line-height: 1.7;
 }
 
 .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
   color: white;
   font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose h1 {
+  font-size: 1.875rem;
+  margin-top: 0;
+}
+
+.prose h2 {
+  font-size: 1.5rem;
+}
+
+.prose h3 {
+  font-size: 1.25rem;
+}
+
+.prose p {
+  margin-bottom: 1em;
+  line-height: 1.7;
 }
 
 .prose strong {
@@ -408,6 +429,7 @@ html {
   border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
+  margin: 1.5em 0;
 }
 
 .prose pre code {
@@ -421,14 +443,18 @@ html {
   padding-left: 1rem;
   color: #d1d5db;
   font-style: italic;
+  margin: 1.5em 0;
 }
 
 .prose ul, .prose ol {
   color: white;
+  margin: 1em 0;
+  padding-left: 1.5em;
 }
 
 .prose li {
   color: white;
+  margin-bottom: 0.5em;
 }
 
 .prose a {
@@ -438,4 +464,14 @@ html {
 
 .prose a:hover {
   color: #a855f7;
+}
+
+/* Additional spacing for numbered lists */
+.prose ol li {
+  margin-bottom: 0.75em;
+}
+
+/* Better spacing for sections */
+.prose > * + * {
+  margin-top: 1em;
 } 

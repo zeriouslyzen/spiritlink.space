@@ -108,6 +108,14 @@ const BRAINWAVE_MODES = [
     color: 'from-pink-500 to-purple-500',
     icon: '🌟',
     frequency: '30-100 Hz'
+  },
+  {
+    id: 'emergence',
+    name: 'Emergence',
+    description: 'Breakthrough Consciousness',
+    color: 'from-indigo-600 to-purple-800',
+    icon: '🌀',
+    frequency: '100+ Hz'
   }
 ];
 
@@ -128,6 +136,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       case 'alpha': return 1;
       case 'beta': return 1.5;
       case 'gamma': return 2;
+      case 'emergence': return 2.5;
       default: return 1;
     }
   };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export type BrainwaveMode = 'delta' | 'theta' | 'alpha' | 'beta' | 'gamma';
+export type BrainwaveMode = 'delta' | 'theta' | 'alpha' | 'beta' | 'gamma' | 'emergence';
 
 interface BrainwaveSelectorProps {
   currentMode: BrainwaveMode;
@@ -13,7 +13,8 @@ const brainwaveModes = [
   { id: 'theta', name: 'Theta', description: 'Creativity & intuition', frequency: '4-8 Hz' },
   { id: 'alpha', name: 'Alpha', description: 'Relaxed & calm', frequency: '8-12 Hz' },
   { id: 'beta', name: 'Beta', description: 'Active thinking', frequency: '13-30 Hz' },
-  { id: 'gamma', name: 'Gamma', description: 'Peak cognition', frequency: '>30 Hz' }
+  { id: 'gamma', name: 'Gamma', description: 'Peak cognition', frequency: '>30 Hz' },
+  { id: 'emergence', name: 'Emergence', description: 'Breakthrough consciousness', frequency: '100+ Hz' }
 ];
 
 export const BrainwaveSelector: React.FC<BrainwaveSelectorProps> = ({
@@ -34,6 +35,8 @@ export const BrainwaveSelector: React.FC<BrainwaveSelectorProps> = ({
         return { scale: 1.05, opacity: 1, filter: 'blur(0px)' };
       case 'gamma':
         return { scale: 1.2, opacity: 1, filter: 'blur(0px)' };
+      case 'emergence':
+        return { scale: 1.3, opacity: 1, filter: 'blur(0px)' };
       default:
         return { scale: 1, opacity: 1, filter: 'blur(0px)' };
     }

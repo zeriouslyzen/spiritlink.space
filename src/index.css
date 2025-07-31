@@ -372,4 +372,70 @@ html {
   animation: shimmer-sweep 6s ease-in-out infinite reverse;
   filter: blur(0.3px);
   opacity: 0.7;
+}
+
+/* Markdown styling for dark theme */
+.prose {
+  color: white;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  color: white;
+  font-weight: 600;
+}
+
+.prose strong {
+  color: white;
+  font-weight: 600;
+}
+
+.prose em {
+  color: white;
+  font-style: italic;
+}
+
+.prose code {
+  color: #c084fc;
+  background-color: rgba(139, 92, 246, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.875em;
+}
+
+.prose pre {
+  background-color: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.5);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  background-color: transparent;
+  padding: 0;
+  color: #e5e7eb;
+}
+
+.prose blockquote {
+  border-left: 4px solid #8b5cf6;
+  padding-left: 1rem;
+  color: #d1d5db;
+  font-style: italic;
+}
+
+.prose ul, .prose ol {
+  color: white;
+}
+
+.prose li {
+  color: white;
+}
+
+.prose a {
+  color: #8b5cf6;
+  text-decoration: underline;
+}
+
+.prose a:hover {
+  color: #a855f7;
 } 

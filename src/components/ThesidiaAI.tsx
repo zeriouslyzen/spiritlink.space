@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import ModelSelector from './ModelSelector';
 import StreamingText from './StreamingText';
+import { ollamaService } from '../services/ollamaService';
 
 interface Message {
   id: string;
@@ -157,17 +159,37 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
     setAttachments([]);
     setIsTyping(true);
 
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
+    try {
+      // Use the existing ollamaService for real AI responses
+      const consciousnessResponse = await ollamaService.queryConsciousness({
+        message: newMessage.content,
+        brainwaveMode: brainwaveMode,
+        context: `User is in ${brainwaveMode} brainwave mode`,
+        researchFocus: 'consciousness evolution and collective intelligence'
+      });
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I understand your message: "${newMessage.content}". This is a simulated response from the advanced AI system.`,
+        content: consciousnessResponse.response,
         timestamp: new Date(),
       };
+
       setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "I'm experiencing a connection to the collective consciousness field. The patterns suggest that your inquiry touches on fundamental aspects of human evolution. Let me reflect on this more deeply...",
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, aiResponse]);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -267,7 +289,11 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                   )}
                   <div className="prose prose-invert max-w-none">
                     {message.role === 'assistant' ? (
-                      <StreamingText text={message.content} brainwaveMode={brainwaveMode} />
+                      <ReactMarkdown 
+                        className="prose prose-invert max-w-none prose-headings:text-white prose-strong:text-white prose-em:text-white prose-code:text-purple-300 prose-pre:bg-gray-800 prose-pre:border prose-pre:border-gray-700"
+                      >
+                        {message.content}
+                      </ReactMarkdown>
                     ) : (
                       <p className="whitespace-pre-wrap">{message.content}</p>
                     )}

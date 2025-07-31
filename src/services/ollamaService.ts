@@ -162,6 +162,12 @@ Please provide a consciousness research response that includes:
 
 Format your response as a comprehensive consciousness research analysis.`;
 
+    console.log('Sending request to Ollama:', {
+      model: this.currentModel,
+      brainwaveMode: query.brainwaveMode,
+      message: query.message
+    });
+
     try {
       const response = await fetch(`${this.baseUrl}/api/generate`, {
         method: 'POST',
@@ -180,11 +186,14 @@ Format your response as a comprehensive consciousness research analysis.`;
         })
       });
 
+      console.log('Ollama response status:', response.status);
+
       if (!response.ok) {
         throw new Error(`Ollama API error: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Ollama raw response:', data);
       
       return this.parseConsciousnessResponse(data.response, query.brainwaveMode);
     } catch (error) {

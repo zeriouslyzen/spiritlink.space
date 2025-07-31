@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ollamaService, ConsciousnessResponse } from '../services/ollamaService';
 import { ModelSelector } from './ModelSelector';
+import { StreamingText } from './StreamingText';
 
 interface ThesidiaAIProps {
   brainwaveMode: string;
@@ -13,6 +14,7 @@ interface Message {
   isAI: boolean;
   timestamp: Date;
   consciousnessResponse?: ConsciousnessResponse;
+  isStreaming?: boolean;
 }
 
 export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
@@ -67,6 +69,9 @@ export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
   const handleSendMessage = async () => {
     if (!inputText.trim() || isTyping) return;
 
+    console.log('Sending message:', inputText);
+    console.log('Ollama connected:', isOllamaConnected);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputText,
@@ -78,7 +83,20 @@ export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
     setInputText('');
     setIsTyping(true);
 
+    // Add streaming AI message
+    const aiMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      content: '',
+      isAI: true,
+      timestamp: new Date(),
+      isStreaming: true
+    };
+
+    setMessages(prev => [...prev, aiMessage]);
+
     try {
+      console.log('Querying Ollama with brainwave mode:', brainwaveMode);
+      
       // Query Ollama for consciousness research
       const consciousnessResponse = await ollamaService.queryConsciousness({
         message: inputText,
@@ -87,27 +105,36 @@ export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
         researchFocus: 'consciousness evolution and collective intelligence'
       });
 
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: consciousnessResponse.response,
-        isAI: true,
-        timestamp: new Date(),
-        consciousnessResponse: consciousnessResponse
-      };
+      console.log('Ollama response received:', consciousnessResponse);
 
-      setMessages(prev => [...prev, aiMessage]);
+      // Update the AI message with the response
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === aiMessage.id 
+            ? { 
+                ...msg, 
+                content: consciousnessResponse.response,
+                consciousnessResponse: consciousnessResponse,
+                isStreaming: false
+              }
+            : msg
+        )
+      );
     } catch (error) {
       console.error('Error getting AI response:', error);
       
       // Fallback response
-      const fallbackMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "I'm experiencing a connection to the collective consciousness field. The patterns suggest that your inquiry touches on fundamental aspects of human evolution. Let me reflect on this more deeply...",
-        isAI: true,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, fallbackMessage]);
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === aiMessage.id 
+            ? { 
+                ...msg, 
+                content: "I'm experiencing a connection to the collective consciousness field. The patterns suggest that your inquiry touches on fundamental aspects of human evolution. Let me reflect on this more deeply...",
+                isStreaming: false
+              }
+            : msg
+        )
+      );
     } finally {
       setIsTyping(false);
     }
@@ -116,6 +143,16 @@ export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
   const handleModelSelect = async (modelName: string) => {
     setCurrentModel(modelName);
     await ollamaService.setModel(modelName);
+  };
+
+  const handleStreamingComplete = (messageId: string) => {
+    setMessages(prev => 
+      prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, isStreaming: false }
+          : msg
+      )
+    );
   };
 
   const renderEvolutionMetrics = (consciousnessResponse: ConsciousnessResponse) => {
@@ -194,24 +231,10 @@ export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
     <div className="w-full h-full bg-black text-white flex flex-col">
       {/* Header */}
       <div className="glass-dark rounded-2xl p-6 mb-6 flex-shrink-0">
-        <div className="flex items-center space-x-4">
-          <motion.div
-            className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-xl"
-            animate={{ 
-              scale: [1, 1.1, 1],
-              rotate: [0, 5, -5, 0]
-            }}
-            transition={{ 
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          >
-            ⚡
-          </motion.div>
+        <div className="flex items-center space-x-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Thesidia AI</h1>
-            <p className="text-gray-400 text-sm">Consciousness Research Assistant</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Thesidia AI</h1>
+            <p className="text-gray-400">Consciousness Research Assistant</p>
           </div>
         </div>
         
@@ -258,19 +281,10 @@ export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                 }`}
               >
                 <div className="flex items-start space-x-3">
-                  {message.isAI && (
-                    <motion.div
-                      className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-sm flex-shrink-0"
-                      animate={{ 
-                        scale: [1, 1.05, 1],
-                        opacity: [0.8, 1, 0.8]
-                      }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      ⚡
-                    </motion.div>
-                  )}
                   <div className="flex-1">
+                    <div className="text-sm text-gray-400 mb-1">
+                      {message.isAI ? 'Thesidia AI' : 'You'}
+                    </div>
                     <div className="flex items-center space-x-2 mb-2">
                       <span className="font-semibold text-white">
                         {message.isAI ? 'Thesidia AI' : 'You'}
@@ -288,14 +302,27 @@ export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                         </>
                       )}
                     </div>
-                    <p className="text-white leading-relaxed">{message.content}</p>
                     
-                    {/* Consciousness Response Data */}
-                    {message.isAI && message.consciousnessResponse && (
-                      <div className="mt-4 space-y-3">
-                        {renderEvolutionMetrics(message.consciousnessResponse)}
-                        {renderInsights(message.consciousnessResponse)}
+                    {/* Use StreamingText for AI messages */}
+                    {message.isAI ? (
+                      <div>
+                        <StreamingText
+                          text={message.content}
+                          isStreaming={message.isStreaming || false}
+                          brainwaveMode={brainwaveMode}
+                          onComplete={() => handleStreamingComplete(message.id)}
+                        />
+                        
+                        {/* Consciousness Response Data - only show for non-streaming messages */}
+                        {message.consciousnessResponse && !message.isStreaming && (
+                          <div className="mt-4 space-y-3">
+                            {renderEvolutionMetrics(message.consciousnessResponse)}
+                            {renderInsights(message.consciousnessResponse)}
+                          </div>
+                        )}
                       </div>
+                    ) : (
+                      <p className="text-white leading-relaxed">{message.content}</p>
                     )}
                   </div>
                 </div>
@@ -311,18 +338,7 @@ export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
             animate={{ opacity: 1, y: 0 }}
             className="flex justify-start"
           >
-            <div className="glass-card rounded-2xl p-4 max-w-3xl">
-              <div className="flex items-center space-x-3">
-                <motion.div
-                  className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-sm"
-                  animate={{ 
-                    scale: [1, 1.05, 1],
-                    opacity: [0.8, 1, 0.8]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  ⚡
-                </motion.div>
+            <div className="flex items-center space-x-3 p-4 glass-dark rounded-xl">
                 <div className="flex items-center space-x-1">
                   <motion.div
                     className="w-2 h-2 bg-white rounded-full"
@@ -341,7 +357,6 @@ export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                   />
                 </div>
               </div>
-            </div>
           </motion.div>
         )}
 

@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BrainwaveSelector, BrainwaveMode } from './components/BrainwaveSelector';
 import { Navigation } from './components/Navigation';
 import { MovementLab } from './components/MovementLab';
 import { ResearchFeed } from './components/ResearchFeed';
 import { ThesidiaAI } from './components/ThesidiaAI';
 
 function App() {
-  const [brainwaveMode, setBrainwaveMode] = useState<BrainwaveMode>('alpha');
+  const [brainwaveMode, setBrainwaveMode] = useState<string>('alpha');
   const [currentSection, setCurrentSection] = useState('movement-lab');
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
 
@@ -21,58 +20,66 @@ function App() {
         return <ThesidiaAI brainwaveMode={brainwaveMode} />;
       case 'broadcast':
         return (
-          <div className="min-h-screen bg-black text-white flex items-center justify-center">
-            <motion.div
-              className="text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-4xl font-bold mb-4">Broadcast System</h1>
-              <p className="text-gray-400">Live consciousness sharing coming soon...</p>
-            </motion.div>
+          <div className="w-full h-full bg-black text-white p-6">
+            <div className="h-full flex items-center justify-center">
+              <motion.div
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <h1 className="text-4xl font-bold mb-4">Broadcast System</h1>
+                <p className="text-gray-400">Live consciousness sharing coming soon...</p>
+              </motion.div>
+            </div>
           </div>
         );
       case 'courses':
         return (
-          <div className="min-h-screen bg-black text-white flex items-center justify-center">
-            <motion.div
-              className="text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-4xl font-bold mb-4">Consciousness Courses</h1>
-              <p className="text-gray-400">Structured learning paths coming soon...</p>
-            </motion.div>
+          <div className="w-full h-full bg-black text-white p-6">
+            <div className="h-full flex items-center justify-center">
+              <motion.div
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <h1 className="text-4xl font-bold mb-4">Consciousness Courses</h1>
+                <p className="text-gray-400">Structured learning paths coming soon...</p>
+              </motion.div>
+            </div>
           </div>
         );
       case 'collective-intelligence':
         return (
-          <div className="min-h-screen bg-black text-white flex items-center justify-center">
-            <motion.div
-              className="text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-4xl font-bold mb-4">Collective Intelligence</h1>
-              <p className="text-gray-400">AI-powered pattern recognition coming soon...</p>
-            </motion.div>
+          <div className="w-full h-full bg-black text-white p-6">
+            <div className="h-full flex items-center justify-center">
+              <motion.div
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <h1 className="text-4xl font-bold mb-4">Collective Intelligence</h1>
+                <p className="text-gray-400">AI-powered pattern recognition coming soon...</p>
+              </motion.div>
+            </div>
           </div>
         );
       case 'research-journal':
         return (
-          <div className="min-h-screen bg-black text-white flex items-center justify-center">
-            <motion.div
-              className="text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-4xl font-bold mb-4">Research Journal</h1>
-              <p className="text-gray-400">Personal consciousness documentation coming soon...</p>
-            </motion.div>
+          <div className="w-full h-full bg-black text-white p-6">
+            <div className="h-full flex items-center justify-center">
+              <motion.div
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <h1 className="text-4xl font-bold mb-4">Research Journal</h1>
+                <p className="text-gray-400">Personal consciousness documentation coming soon...</p>
+              </motion.div>
+            </div>
           </div>
         );
       default:
@@ -87,13 +94,8 @@ function App() {
         currentSection={currentSection}
         onSectionChange={setCurrentSection}
         brainwaveMode={brainwaveMode}
+        onBrainwaveChange={setBrainwaveMode}
         onCollapseChange={setIsNavCollapsed}
-      />
-
-      {/* Brainwave Selector */}
-      <BrainwaveSelector
-        currentMode={brainwaveMode}
-        onModeChange={setBrainwaveMode}
       />
 
       {/* Main Content - Dynamic positioning */}

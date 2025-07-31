@@ -117,8 +117,8 @@ export const ResearchFeed: React.FC<ResearchFeedProps> = ({ brainwaveMode }) => 
   };
 
   return (
-    <div className="w-full h-full bg-black text-white">
-      <div className="max-w-2xl mx-auto h-full flex flex-col">
+    <div className="w-full h-full bg-black text-white p-6">
+      <div className="h-full flex flex-col">
         {/* Header */}
         <div className="glass-dark rounded-2xl p-6 mb-6 flex-shrink-0">
           <motion.h1 

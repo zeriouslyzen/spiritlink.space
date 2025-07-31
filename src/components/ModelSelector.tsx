@@ -69,20 +69,6 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <motion.div
-              className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-sm"
-              animate={{ 
-                scale: [1, 1.1, 1],
-                rotate: [0, 5, -5, 0]
-              }}
-              transition={{ 
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              ⚡
-            </motion.div>
             <div>
               <div className="font-semibold text-white">
                 {currentModelData?.name || 'Loading...'}
@@ -121,59 +107,75 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       </motion.button>
 
       {/* Dropdown */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="absolute top-full left-0 right-0 mt-2 glass-dark rounded-xl p-2 z-50 max-h-96 overflow-y-auto"
-          >
-            {isLoading ? (
-              <div className="p-4 text-center text-gray-400">
-                <motion.div
-                  className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full mx-auto"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                />
-                <p className="mt-2">Loading models...</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {models.map((model) => (
-                  <motion.button
-                    key={model.name}
-                    className={`w-full text-left p-3 rounded-lg transition-all ${
-                      model.name === currentModel 
-                        ? 'glass-medium text-white' 
-                        : 'glass-input text-gray-300 hover:glass-medium hover:text-white'
-                    }`}
-                    onClick={() => handleModelSelect(model.name)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="font-medium">{model.name}</div>
-                        <div className="text-sm text-gray-400">{model.description}</div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Size: {model.size}
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[99999]"
+              onClick={() => setIsOpen(false)}
+            />
+            
+            {/* Dropdown */}
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ 
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1]
+              }}
+              className="absolute top-full left-0 right-0 mt-2 glass-dark rounded-xl p-2 z-[999999] max-h-96 overflow-y-auto shadow-2xl border border-white/10"
+            >
+              {isLoading ? (
+                <div className="p-4 text-center text-gray-400">
+                  <motion.div
+                    className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full mx-auto"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  />
+                  <p className="mt-2">Loading models...</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {models.map((model) => (
+                    <motion.button
+                      key={model.name}
+                      className={`w-full text-left p-3 rounded-lg transition-all ${
+                        model.name === currentModel 
+                          ? 'glass-medium text-white' 
+                          : 'glass-input text-gray-300 hover:glass-medium hover:text-white'
+                      }`}
+                      onClick={() => handleModelSelect(model.name)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium">{model.name}</div>
+                          <div className="text-sm text-gray-400">{model.description}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Size: {model.size}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${getCapabilityColor(model.consciousnessCapability)}`} />
+                          <span className="text-xs text-gray-400">
+                            {getCapabilityText(model.consciousnessCapability)}
+                          </span>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 rounded-full ${getCapabilityColor(model.consciousnessCapability)}`} />
-                        <span className="text-xs text-gray-400">
-                          {getCapabilityText(model.consciousnessCapability)}
-                        </span>
-                      </div>
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-            )}
-          </motion.div>
+                    </motion.button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 

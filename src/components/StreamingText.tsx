@@ -3,9 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface StreamingTextProps {
   text: string;
-  isStreaming: boolean;
   brainwaveMode: string;
-  onComplete?: () => void;
 }
 
 interface Word {
@@ -15,11 +13,9 @@ interface Word {
   type: 'word' | 'punctuation' | 'newline';
 }
 
-export const StreamingText: React.FC<StreamingTextProps> = ({ 
+const StreamingText: React.FC<StreamingTextProps> = ({ 
   text, 
-  isStreaming, 
-  brainwaveMode,
-  onComplete 
+  brainwaveMode
 }) => {
   const [words, setWords] = useState<Word[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -58,10 +54,9 @@ export const StreamingText: React.FC<StreamingTextProps> = ({
 
   // Animated typing effect
   useEffect(() => {
-    if (!isStreaming || currentIndex >= words.length) {
-      if (currentIndex >= words.length && !isComplete) {
+    if (currentIndex >= words.length) {
+      if (!isComplete) {
         setIsComplete(true);
-        onComplete?.();
       }
       return;
     }
@@ -77,7 +72,7 @@ export const StreamingText: React.FC<StreamingTextProps> = ({
     }, typingSpeed);
 
     return () => clearTimeout(timer);
-  }, [currentIndex, isStreaming, words.length, brainwaveMode, isComplete, onComplete]);
+  }, [currentIndex, words.length, brainwaveMode, isComplete]);
 
   const getTypingSpeed = () => {
     switch (brainwaveMode) {
@@ -208,7 +203,7 @@ export const StreamingText: React.FC<StreamingTextProps> = ({
       </AnimatePresence>
       
       {/* Animated cursor */}
-      {isStreaming && currentIndex < words.length && (
+      {currentIndex < words.length && (
         <motion.span
           className="inline-block w-0.5 h-6 bg-gradient-to-b from-purple-400 to-blue-400 ml-1"
           animate={{ 
@@ -246,4 +241,6 @@ export const StreamingText: React.FC<StreamingTextProps> = ({
       )}
     </div>
   );
-}; 
+};
+
+export default StreamingText; 

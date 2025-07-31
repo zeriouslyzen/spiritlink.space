@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Navigation } from './components/Navigation';
 import { MovementLab } from './components/MovementLab';
 import { ResearchFeed } from './components/ResearchFeed';
-import { ThesidiaAI } from './components/ThesidiaAI';
+import ThesidiaAI from './components/ThesidiaAI';
 
 function App() {
   const [brainwaveMode, setBrainwaveMode] = useState<string>('alpha');

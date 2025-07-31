@@ -1,459 +1,419 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ollamaService, ConsciousnessResponse } from '../services/ollamaService';
-import { ModelSelector } from './ModelSelector';
-import { StreamingText } from './StreamingText';
+import ModelSelector from './ModelSelector';
+import StreamingText from './StreamingText';
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  attachments?: File[];
+}
 
 interface ThesidiaAIProps {
   brainwaveMode: string;
 }
 
-interface Message {
-  id: string;
-  content: string;
-  isAI: boolean;
-  timestamp: Date;
-  consciousnessResponse?: ConsciousnessResponse;
-  isStreaming?: boolean;
-}
-
-export const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: "Hello! I'm Thesidia AI, your consciousness research assistant. I'm connected to advanced AI models to help you explore the frontiers of human consciousness and collective evolution. What would you like to research today?",
-      isAI: true,
-      timestamp: new Date()
-    }
-  ]);
-  const [inputText, setInputText] = useState('');
+const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [cursorVisible, setCursorVisible] = useState(true);
-  const [currentModel, setCurrentModel] = useState('llama3.1:latest');
-  const [isOllamaConnected, setIsOllamaConnected] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [showCommands, setShowCommands] = useState(false);
+  const [commandFilter, setCommandFilter] = useState('');
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
 
-  useEffect(() => {
-    checkOllamaConnection();
-  }, []);
-
-  const checkOllamaConnection = async () => {
-    const isHealthy = await ollamaService.isHealthy();
-    setIsOllamaConnected(isHealthy);
-  };
-
-  const getAnimationSpeed = () => {
-    switch (brainwaveMode) {
-      case 'delta': return 0.8;
-      case 'theta': return 1.2;
-      case 'alpha': return 1;
-      case 'beta': return 1.5;
-      case 'gamma': return 2;
-      default: return 1;
+  // Auto-resize textarea
+  const adjustTextareaHeight = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
     }
-  };
-
-  // Cursor blinking effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCursorVisible(prev => !prev);
-    }, 500);
-    return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to bottom
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [inputValue, adjustTextareaHeight]);
+
+  // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!inputText.trim() || isTyping) return;
+  // Command suggestions
+  const commands = [
+    { command: '/help', description: 'Show available commands' },
+    { command: '/clear', description: 'Clear conversation history' },
+    { command: '/export', description: 'Export conversation' },
+    { command: '/settings', description: 'Open settings' },
+    { command: '/voice', description: 'Toggle voice input' },
+  ];
 
-    console.log('Sending message:', inputText);
-    console.log('Ollama connected:', isOllamaConnected);
+  const filteredCommands = commands.filter(cmd =>
+    cmd.command.toLowerCase().includes(commandFilter.toLowerCase()) ||
+    cmd.description.toLowerCase().includes(commandFilter.toLowerCase())
+  );
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: inputText,
-      isAI: false,
-      timestamp: new Date()
-    };
+  // Handle command selection
+  const handleCommandSelect = (command: string) => {
+    setInputValue(command + ' ');
+    setShowCommands(false);
+    setCommandFilter('');
+    textareaRef.current?.focus();
+  };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputText('');
-    setIsTyping(true);
-
-    // Add streaming AI message
-    const aiMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      content: '',
-      isAI: true,
-      timestamp: new Date(),
-      isStreaming: true
-    };
-
-    setMessages(prev => [...prev, aiMessage]);
-
-    try {
-      console.log('Querying Ollama with brainwave mode:', brainwaveMode);
-      
-      // Query Ollama for consciousness research
-      const consciousnessResponse = await ollamaService.queryConsciousness({
-        message: inputText,
-        brainwaveMode: brainwaveMode,
-        context: `User is in ${brainwaveMode} brainwave mode`,
-        researchFocus: 'consciousness evolution and collective intelligence'
-      });
-
-      console.log('Ollama response received:', consciousnessResponse);
-
-      // Update the AI message with the response
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === aiMessage.id 
-            ? { 
-                ...msg, 
-                content: consciousnessResponse.response,
-                consciousnessResponse: consciousnessResponse,
-                isStreaming: false
-              }
-            : msg
-        )
-      );
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      
-      // Fallback response
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === aiMessage.id 
-            ? { 
-                ...msg, 
-                content: "I'm experiencing a connection to the collective consciousness field. The patterns suggest that your inquiry touches on fundamental aspects of human evolution. Let me reflect on this more deeply...",
-                isStreaming: false
-              }
-            : msg
-        )
-      );
-    } finally {
-      setIsTyping(false);
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    
+    // Check for command triggers
+    if (value.startsWith('/')) {
+      setShowCommands(true);
+      setCommandFilter(value.slice(1));
+    } else {
+      setShowCommands(false);
+      setCommandFilter('');
     }
   };
 
-  const handleModelSelect = async (modelName: string) => {
-    setCurrentModel(modelName);
-    await ollamaService.setModel(modelName);
+  // Handle key presses
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
-  const handleStreamingComplete = (messageId: string) => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg.id === messageId 
-          ? { ...msg, isStreaming: false }
-          : msg
-      )
-    );
+  // File handling
+  const handleFileSelect = (files: FileList | null) => {
+    if (files) {
+      const newFiles = Array.from(files);
+      setAttachments(prev => [...prev, ...newFiles]);
+    }
   };
 
-  const renderEvolutionMetrics = (consciousnessResponse: ConsciousnessResponse) => {
-    const { clarity, depth, breakthrough } = consciousnessResponse.evolutionMetrics;
-    
-    return (
-      <div className="mt-4 p-3 glass-card rounded-lg">
-        <div className="text-sm font-semibold text-purple-400 mb-2">Evolution Metrics</div>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="text-center">
-            <div className="text-xs text-gray-400">Clarity</div>
-            <div className="text-lg font-bold text-green-400">{clarity}%</div>
-            <div className="w-full bg-gray-700 rounded-full h-1 mt-1">
-              <motion.div 
-                className="bg-green-400 h-1 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${clarity}%` }}
-                transition={{ duration: 1 }}
-              />
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-400">Depth</div>
-            <div className="text-lg font-bold text-blue-400">{depth}%</div>
-            <div className="w-full bg-gray-700 rounded-full h-1 mt-1">
-              <motion.div 
-                className="bg-blue-400 h-1 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${depth}%` }}
-                transition={{ duration: 1, delay: 0.2 }}
-              />
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-400">Breakthrough</div>
-            <div className="text-lg font-bold text-purple-400">{breakthrough}%</div>
-            <div className="w-full bg-gray-700 rounded-full h-1 mt-1">
-              <motion.div 
-                className="bg-purple-400 h-1 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${breakthrough}%` }}
-                transition={{ duration: 1, delay: 0.4 }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const renderInsights = (consciousnessResponse: ConsciousnessResponse) => {
-    if (!consciousnessResponse.consciousnessInsights.length) return null;
-    
-    return (
-      <div className="mt-3 p-3 glass-card rounded-lg">
-        <div className="text-sm font-semibold text-purple-400 mb-2">Consciousness Insights</div>
-        <div className="space-y-2">
-          {consciousnessResponse.consciousnessInsights.map((insight, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="flex items-start space-x-2"
-            >
-              <div className="w-1.5 h-1.5 bg-purple-400 rounded-full mt-2 flex-shrink-0" />
-              <span className="text-sm text-gray-300">{insight}</span>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    );
+  // Drag and drop
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current++;
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current--;
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current = 0;
+    const files = e.dataTransfer.files;
+    handleFileSelect(files);
+  };
+
+  // Voice input
+  const startVoiceRecording = () => {
+    if ('webkitSpeechRecognition' in window) {
+      const recognition = new (window as any).webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      
+      recognition.onstart = () => setIsRecording(true);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInputValue(prev => prev + transcript);
+      };
+      recognition.onend = () => setIsRecording(false);
+      
+      recognition.start();
+    }
+  };
+
+  // Send message
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() && attachments.length === 0) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: inputValue,
+      timestamp: new Date(),
+      attachments: attachments.length > 0 ? [...attachments] : undefined,
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+    setInputValue('');
+    setAttachments([]);
+    setIsTyping(true);
+
+    // Simulate AI response (replace with actual API call)
+    setTimeout(() => {
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `I understand your message: "${newMessage.content}". This is a simulated response from the advanced AI system.`,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, aiResponse]);
+      setIsTyping(false);
+    }, 2000);
   };
 
   return (
     <div className="w-full h-full bg-black text-white flex flex-col">
       {/* Header */}
-      <div className="glass-dark rounded-2xl p-6 mb-6 flex-shrink-0">
-        <div className="flex items-center space-x-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Thesidia AI</h1>
-            <p className="text-gray-400">Consciousness Research Assistant</p>
+      <div className="glass-dark rounded-2xl p-4 mb-4 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <motion.div 
+              className="w-10 h-10 rounded-full flex items-center justify-center relative"
+              animate={{
+                boxShadow: brainwaveMode === 'delta' 
+                  ? '0 0 20px rgba(139, 92, 246, 0.6), 0 0 40px rgba(139, 92, 246, 0.3)'
+                  : brainwaveMode === 'theta'
+                  ? '0 0 15px rgba(168, 85, 247, 0.7), 0 0 30px rgba(168, 85, 247, 0.4)'
+                  : brainwaveMode === 'alpha'
+                  ? '0 0 12px rgba(59, 130, 246, 0.6), 0 0 25px rgba(59, 130, 246, 0.3)'
+                  : brainwaveMode === 'beta'
+                  ? '0 0 10px rgba(34, 197, 94, 0.6), 0 0 20px rgba(34, 197, 94, 0.3)'
+                  : '0 0 15px rgba(236, 72, 153, 0.7), 0 0 35px rgba(236, 72, 153, 0.4)'
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <motion.div
+                className="w-8 h-8 flex items-center justify-center"
+                animate={{
+                  scale: brainwaveMode === 'delta' 
+                    ? [1, 1.1, 1]
+                    : brainwaveMode === 'theta'
+                    ? [1, 1.15, 1]
+                    : brainwaveMode === 'alpha'
+                    ? [1, 1.05, 1]
+                    : brainwaveMode === 'beta'
+                    ? [1, 1.2, 1]
+                    : [1, 1.25, 1]
+                }}
+                transition={{ 
+                  duration: brainwaveMode === 'delta' ? 3 : brainwaveMode === 'theta' ? 2.5 : brainwaveMode === 'alpha' ? 2 : brainwaveMode === 'beta' ? 1.5 : 1,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <motion.div
+                  className="text-white font-bold text-lg"
+                  animate={{
+                    color: brainwaveMode === 'delta' 
+                      ? '#8b5cf6'
+                      : brainwaveMode === 'theta'
+                      ? '#a855f7'
+                      : brainwaveMode === 'alpha'
+                      ? '#3b82f6'
+                      : brainwaveMode === 'beta'
+                      ? '#22c55e'
+                      : '#ec4899'
+                  }}
+                  transition={{ duration: 1 }}
+                >
+                  ⟁
+                </motion.div>
+              </motion.div>
+            </motion.div>
+            <div>
+              <h2 className="text-lg font-semibold">Thesidia AI</h2>
+              <p className="text-xs text-gray-400">Consciousness Research Assistant</p>
+            </div>
           </div>
-        </div>
-        
-        <div className="mt-4 flex items-center space-x-4 text-sm">
-          <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full animate-pulse ${isOllamaConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-gray-400">
-              {isOllamaConnected ? 'Connected to Ollama' : 'Ollama Disconnected'}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            <span className="text-gray-400">Analyzing Consciousness Patterns</span>
-          </div>
-        </div>
-
-        {/* Model Selector */}
-        <div className="mt-4">
-          <ModelSelector
-            onModelSelect={handleModelSelect}
-            currentModel={currentModel}
-            brainwaveMode={brainwaveMode}
-          />
+          <ModelSelector brainwaveMode={brainwaveMode} />
         </div>
       </div>
 
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <AnimatePresence>
-          {messages.map((message, index) => (
+          {messages.map((message) => (
             <motion.div
               key={message.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 * getAnimationSpeed() }}
-              className={`flex ${message.isAI ? 'justify-start' : 'justify-end'}`}
+              transition={{ duration: 0.3 }}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div 
-                className={`max-w-3xl rounded-2xl p-4 ${
-                  message.isAI 
-                    ? 'glass-card' 
-                    : 'glass-medium'
-                }`}
-              >
-                <div className="flex items-start space-x-3">
-                  <div className="flex-1">
-                    <div className="text-sm text-gray-400 mb-1">
-                      {message.isAI ? 'Thesidia AI' : 'You'}
+              <div className={`max-w-[80%] ${message.role === 'user' ? 'order-2' : 'order-1'}`}>
+                <div className={`p-4 rounded-2xl ${
+                  message.role === 'user' 
+                    ? 'glass-dark' 
+                    : 'glass-dark'
+                }`}>
+                  {message.attachments && message.attachments.length > 0 && (
+                    <div className="mb-3 space-y-2">
+                      {message.attachments.map((file, index) => (
+                        <div key={index} className="flex items-center space-x-2 p-2 bg-white/10 rounded-lg">
+                          <span className="text-xs">📎 {file.name}</span>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="font-semibold text-white">
-                        {message.isAI ? 'Thesidia AI' : 'You'}
-                      </span>
-                      <span className="text-gray-400 text-sm">•</span>
-                      <span className="text-gray-400 text-sm">
-                        {message.timestamp.toLocaleTimeString()}
-                      </span>
-                      {message.isAI && message.consciousnessResponse && (
-                        <>
-                          <span className="text-gray-400 text-sm">•</span>
-                          <span className="text-gray-400 text-sm">
-                            {message.consciousnessResponse.model}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    
-                    {/* Use StreamingText for AI messages */}
-                    {message.isAI ? (
-                      <div>
-                        <StreamingText
-                          text={message.content}
-                          isStreaming={message.isStreaming || false}
-                          brainwaveMode={brainwaveMode}
-                          onComplete={() => handleStreamingComplete(message.id)}
-                        />
-                        
-                        {/* Consciousness Response Data - only show for non-streaming messages */}
-                        {message.consciousnessResponse && !message.isStreaming && (
-                          <div className="mt-4 space-y-3">
-                            {renderEvolutionMetrics(message.consciousnessResponse)}
-                            {renderInsights(message.consciousnessResponse)}
-                          </div>
-                        )}
-                      </div>
+                  )}
+                  <div className="prose prose-invert max-w-none">
+                    {message.role === 'assistant' ? (
+                      <StreamingText text={message.content} brainwaveMode={brainwaveMode} />
                     ) : (
-                      <p className="text-white leading-relaxed">{message.content}</p>
+                      <p className="whitespace-pre-wrap">{message.content}</p>
                     )}
                   </div>
+                </div>
+                <div className={`text-xs text-gray-400 mt-1 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                  {message.timestamp.toLocaleTimeString()}
                 </div>
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
 
-        {/* Typing Indicator */}
-        {isTyping && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-start"
-          >
-            <div className="flex items-center space-x-3 p-4 glass-dark rounded-xl">
-                <div className="flex items-center space-x-1">
-                  <motion.div
-                    className="w-2 h-2 bg-white rounded-full"
-                    animate={{ scale: [1, 1.5, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                  />
-                  <motion.div
-                    className="w-2 h-2 bg-white rounded-full"
-                    animate={{ scale: [1, 1.5, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                  />
-                  <motion.div
-                    className="w-2 h-2 bg-white rounded-full"
-                    animate={{ scale: [1, 1.5, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                  />
-                </div>
-              </div>
-          </motion.div>
-        )}
-
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Bar */}
-      <div className="p-6 border-t border-white/10 flex-shrink-0">
-        <div className="glass-dark rounded-2xl p-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex-1 relative">
-              {/* Apple Intelligence-style cursor - positioned behind text */}
-              <motion.div
-                className="absolute left-0 top-0 w-0.5 h-6 pointer-events-none z-10"
-                style={{
-                  left: `${inputText.length * 0.6}em`,
-                  background: 'linear-gradient(180deg, #A855F7 0%, #8B5CF6 50%, #7C3AED 100%)',
-                  boxShadow: '0 0 8px rgba(168, 85, 247, 0.6)',
-                  filter: 'blur(0.3px)',
-                  borderRadius: '1px'
-                }}
-                animate={{
-                  opacity: cursorVisible ? 0.8 : 0.2
-                }}
-                transition={{
-                  duration: 0.1
-                }}
+      {/* Advanced Input Bar */}
+      <div className="p-4 border-t border-white/10 flex-shrink-0 bg-black">
+        {/* Attachments Preview */}
+        {attachments.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mb-3 p-3 glass-dark rounded-lg"
+          >
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((file, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="flex items-center space-x-2 p-2 bg-white/10 rounded-lg"
+                >
+                  <span className="text-xs">📎 {file.name}</span>
+                  <button
+                    onClick={() => removeAttachment(index)}
+                    className="text-red-400 hover:text-red-300 text-xs"
+                  >
+                    ×
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Command Suggestions */}
+        <AnimatePresence>
+          {showCommands && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="mb-3 p-3 glass-dark rounded-lg"
+            >
+              <div className="space-y-1">
+                {filteredCommands.map((cmd) => (
+                  <button
+                    key={cmd.command}
+                    onClick={() => handleCommandSelect(cmd.command)}
+                    className="w-full text-left p-2 hover:bg-white/10 rounded text-sm"
+                  >
+                    <span className="font-mono text-purple-400">{cmd.command}</span>
+                    <span className="text-gray-400 ml-2">{cmd.description}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Input Container */}
+        <div
+          className={`relative p-3 glass-dark rounded-2xl transition-all duration-300 ${
+            dragCounter.current > 0 ? 'ring-2 ring-purple-500' : ''
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {/* Textarea */}
+          <textarea
+            ref={textareaRef}
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            placeholder="Type your message... (Use / for commands, drag files here)"
+            className="w-full bg-transparent border-none outline-none resize-none text-white placeholder-gray-400 min-h-[20px] max-h-[200px]"
+            rows={1}
+          />
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center space-x-2">
+              {/* File Upload */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2 text-gray-400 hover:text-white transition-colors"
+                title="Attach file"
               >
-                {/* Continuous mist/fog falling effect */}
-                <motion.div
-                  className="absolute -top-1 left-0 w-1 h-6"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(168, 85, 247, 0.4) 0%, rgba(139, 92, 246, 0.2) 50%, transparent 100%)',
-                    filter: 'blur(0.8px)',
-                    borderRadius: '1px'
-                  }}
-                  animate={{
-                    y: [0, 12, 0],
-                    opacity: [0.6, 0.1, 0.6]
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
-                {/* Additional subtle glow trail */}
-                <motion.div
-                  className="absolute -top-2 left-0 w-1 h-8"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(168, 85, 247, 0.2) 0%, rgba(139, 92, 246, 0.1) 50%, transparent 100%)',
-                    filter: 'blur(1.2px)',
-                    borderRadius: '1px'
-                  }}
-                  animate={{
-                    y: [0, 16, 0],
-                    opacity: [0.3, 0.05, 0.3]
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.5
-                  }}
-                />
-              </motion.div>
-              
-              <textarea
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Ask Thesidia AI about consciousness research..."
-                className="w-full bg-transparent text-white placeholder-gray-500 resize-none outline-none text-lg relative z-20"
-                rows={1}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
+                📎
+              </motion.button>
+
+              {/* Voice Input */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={startVoiceRecording}
+                className={`p-2 transition-colors ${
+                  isRecording ? 'text-red-400 animate-pulse' : 'text-gray-400 hover:text-white'
+                }`}
+                title="Voice input"
+              >
+                {isRecording ? '🎤' : '🎙️'}
+              </motion.button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={(e) => handleFileSelect(e.target.files)}
+                className="hidden"
               />
             </div>
+
+            {/* Send Button */}
             <motion.button
-              className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                inputText.trim() && isOllamaConnected
-                  ? 'glass-button text-white hover:glass-medium' 
-                  : 'glass-input text-gray-400'
-              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleSendMessage}
-              disabled={!inputText.trim() || isTyping || !isOllamaConnected}
-              whileHover={inputText.trim() && isOllamaConnected ? { scale: 1.05 } : {}}
-              whileTap={inputText.trim() && isOllamaConnected ? { scale: 0.95 } : {}}
+              disabled={!inputValue.trim() && attachments.length === 0}
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                inputValue.trim() || attachments.length > 0
+                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600'
+                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              }`}
             >
-              {isTyping ? 'Processing...' : 'Send'}
+              Send
             </motion.button>
           </div>
         </div>
       </div>
     </div>
   );
-}; 
+};
+
+export default ThesidiaAI; 

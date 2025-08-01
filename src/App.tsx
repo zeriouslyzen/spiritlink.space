@@ -4,6 +4,7 @@ import { Navigation } from './components/Navigation';
 import { MovementLab } from './components/MovementLab';
 import { ResearchFeed } from './components/ResearchFeed';
 import ThesidiaAI from './components/ThesidiaAI';
+import CollectiveIntelligence from './components/CollectiveIntelligence';
 
 function App() {
   const [brainwaveMode, setBrainwaveMode] = useState<string>('alpha');
@@ -51,21 +52,7 @@ function App() {
           </div>
         );
       case 'collective-intelligence':
-        return (
-          <div className="w-full h-full bg-black text-white p-6">
-            <div className="h-full flex items-center justify-center">
-              <motion.div
-                className="text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <h1 className="text-4xl font-bold mb-4">Collective Intelligence</h1>
-                <p className="text-gray-400">AI-powered pattern recognition coming soon...</p>
-              </motion.div>
-            </div>
-          </div>
-        );
+        return <CollectiveIntelligence brainwaveMode={brainwaveMode} />;
       case 'research-journal':
         return (
           <div className="w-full h-full bg-black text-white p-6">

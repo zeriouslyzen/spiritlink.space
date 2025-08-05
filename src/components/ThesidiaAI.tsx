@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import ModelSelector from './ModelSelector';
+import ConsciousnessMetrics from './ConsciousnessMetrics';
 import { ollamaService } from '../services/ollamaService';
 
 interface Message {
@@ -52,7 +52,6 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
   });
 
   const [selectedBrainwaveMode, setSelectedBrainwaveMode] = useState<string>('multidimensional');
-  const [selectedModel, setSelectedModel] = useState<string>('llama3.1:latest');
 
   // Load saved messages from localStorage
   useEffect(() => {
@@ -460,7 +459,7 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
               )}
             </div>
           </div>
-          <ModelSelector brainwaveMode={brainwaveMode} />
+                          <ConsciousnessMetrics brainwaveMode={brainwaveMode} />
         </div>
       </div>
 

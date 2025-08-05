@@ -5,6 +5,9 @@ import { createServer } from 'http';
 import { ConsciousnessController } from './controllers/consciousnessController';
 import { ConsciousnessWebSocket } from './websocket/consciousnessWebSocket';
 import { initializeDatabase } from './models/database';
+import { knowledgeGraphController } from './controllers/knowledgeGraphController';
+import { neuroSymbolicController } from './controllers/neuroSymbolicController';
+import { hierarchicalAgentController } from './controllers/hierarchicalAgentController';
 
 // Load environment variables
 dotenv.config();
@@ -45,41 +48,41 @@ app.get('/health', (req, res) => {
 });
 
 // Consciousness API Routes
-app.post('/api/consciousness/quantum-rag', (req, res) => {
-  consciousnessController.processConsciousnessQuery(req, res);
-});
+app.post('/api/consciousness/quantum-rag', consciousnessController.processConsciousnessQuery);
+app.post('/api/emergence/detect', consciousnessController.detectEmergence);
+app.post('/api/astral-entities/map', consciousnessController.classifyAstralEntities);
+app.get('/api/collective-intelligence/patterns', consciousnessController.getCollectiveIntelligencePatterns);
 
-app.post('/api/emergence/detect', (req, res) => {
-  consciousnessController.detectEmergence(req, res);
-});
+// Knowledge Graph endpoints
+app.post('/api/knowledge/initialize', knowledgeGraphController.initialize);
+app.post('/api/knowledge/test-connection', knowledgeGraphController.testConnection);
+app.post('/api/knowledge/entities', knowledgeGraphController.createEntity);
+app.post('/api/knowledge/relationships', knowledgeGraphController.createRelationship);
+app.post('/api/knowledge/query', knowledgeGraphController.queryPatterns);
+app.post('/api/knowledge/evolution', knowledgeGraphController.getConsciousnessEvolution);
+app.get('/api/knowledge/emergence-patterns', knowledgeGraphController.findEmergencePatterns);
+app.post('/api/knowledge/multi-hop-context', knowledgeGraphController.getMultiHopContext);
+app.post('/api/knowledge/living-memory', knowledgeGraphController.updateLivingMemory);
+app.get('/api/knowledge/statistics', knowledgeGraphController.getStatistics);
 
-app.post('/api/astral-entities/classify', (req, res) => {
-  consciousnessController.classifyAstralEntities(req, res);
-});
+// Neuro-Symbolic Reasoning endpoints
+app.post('/api/neuro-symbolic/reason', neuroSymbolicController.reasonAboutConsciousness);
+app.post('/api/neuro-symbolic/plan', neuroSymbolicController.generatePlan);
+app.post('/api/neuro-symbolic/verify', neuroSymbolicController.verifyPlan);
+app.post('/api/neuro-symbolic/govern', neuroSymbolicController.governExecution);
+app.post('/api/neuro-symbolic/confidence', neuroSymbolicController.calculateConfidence);
+app.get('/api/neuro-symbolic/rules', neuroSymbolicController.getVerificationRules);
+app.get('/api/neuro-symbolic/health', neuroSymbolicController.healthCheck);
 
-app.get('/api/collective-intelligence/patterns', (req, res) => {
-  consciousnessController.getCollectiveIntelligencePatterns(req, res);
-});
-
-app.post('/api/consciousness/broadcast', (req, res) => {
-  consciousnessController.shareConsciousness(req, res);
-});
-
-app.get('/api/consciousness/recent', (req, res) => {
-  consciousnessController.getRecentConsciousnessSharing(req, res);
-});
-
-app.get('/api/consciousness/breakthroughs', (req, res) => {
-  consciousnessController.getBreakthroughEvents(req, res);
-});
-
-app.post('/api/consciousness/nodes', (req, res) => {
-  consciousnessController.createConsciousnessNode(req, res);
-});
-
-app.get('/api/consciousness/nodes/search', (req, res) => {
-  consciousnessController.searchConsciousnessNodes(req, res);
-});
+// Hierarchical Agent System endpoints
+app.post('/api/hierarchical/execute-plan', hierarchicalAgentController.executePlan);
+app.post('/api/hierarchical/execute-nshag-pipeline', hierarchicalAgentController.executeNSHAGPipeline);
+app.get('/api/hierarchical/agent-status', hierarchicalAgentController.getAgentStatus);
+app.get('/api/hierarchical/protocols', hierarchicalAgentController.getProtocols);
+app.post('/api/hierarchical/create-agent', hierarchicalAgentController.createAgent);
+app.post('/api/hierarchical/assign-task', hierarchicalAgentController.assignTask);
+app.get('/api/hierarchical/metrics', hierarchicalAgentController.getExecutionMetrics);
+app.get('/api/hierarchical/health', hierarchicalAgentController.healthCheck);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -100,13 +103,33 @@ app.use('/*', (req, res) => {
       'GET /health',
       'POST /api/consciousness/quantum-rag',
       'POST /api/emergence/detect',
-      'POST /api/astral-entities/classify',
+      'POST /api/astral-entities/map',
       'GET /api/collective-intelligence/patterns',
-      'POST /api/consciousness/broadcast',
-      'GET /api/consciousness/recent',
-      'GET /api/consciousness/breakthroughs',
-      'POST /api/consciousness/nodes',
-      'GET /api/consciousness/nodes/search'
+      'POST /api/knowledge/initialize',
+      'POST /api/knowledge/test-connection',
+      'POST /api/knowledge/entities',
+      'POST /api/knowledge/relationships',
+      'POST /api/knowledge/query',
+      'POST /api/knowledge/evolution',
+      'GET /api/knowledge/emergence-patterns',
+      'POST /api/knowledge/multi-hop-context',
+      'POST /api/knowledge/living-memory',
+      'GET /api/knowledge/statistics',
+      'POST /api/neuro-symbolic/reason',
+      'POST /api/neuro-symbolic/plan',
+      'POST /api/neuro-symbolic/verify',
+      'POST /api/neuro-symbolic/govern',
+      'POST /api/neuro-symbolic/confidence',
+      'GET /api/neuro-symbolic/rules',
+      'GET /api/neuro-symbolic/health',
+      'POST /api/hierarchical/execute-plan',
+      'POST /api/hierarchical/execute-nshag-pipeline',
+      'GET /api/hierarchical/agent-status',
+      'GET /api/hierarchical/protocols',
+      'POST /api/hierarchical/create-agent',
+      'POST /api/hierarchical/assign-task',
+      'GET /api/hierarchical/metrics',
+      'GET /api/hierarchical/health'
     ]
   });
 });

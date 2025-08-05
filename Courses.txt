@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpiritLink OS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000; /* Pure black background */
+            color: #e0e0e0; /* Light grey text */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* Custom scrollbar for a futuristic look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111111; /* Darker track */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #555555, #333333); /* Dark grey gradient thumb */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #666666, #444444); /* Lighter grey on hover */
+        }
+
+        /* Custom glowing effect for buttons and interactive elements */
+        .glow-button {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #444444, #222222); /* Dark grey gradient */
+            box-shadow: 0 0 10px rgba(200, 200, 200, 0.1), 0 0 20px rgba(100, 100, 100, 0.05); /* Subtle white/grey glow */
+            transition: all 0.3s ease-in-out;
+        }
+        .glow-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(200, 200, 200, 0.2), 0 0 30px rgba(100, 100, 100, 0.1); /* More intense glow */
+        }
+        .glow-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            background: rgba(255, 255, 255, 0.15);
+            transition: all 0.75s ease-in-out;
+            transform: translate(-50%, -50%) rotate(45deg);
+            opacity: 0;
+        }
+        .glow-button:hover::before {
+            transform: translate(-50%, -50%) rotate(0deg);
+            opacity: 1;
+        }
+
+        /* Glassmorphism effect for cards/panels */
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.05); /* Very subtle white for transparency */
+            backdrop-filter: blur(10px); /* Blur effect */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2); /* Soft shadow */
+        }
+
+        /* Custom styling for details/summary (progressive disclosure) */
+        details summary {
+            cursor: pointer;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.08); /* Subtle light grey transparent background */
+            transition: background-color 0.3s ease;
+            display: flex;
+            align-items: center;
+            user-select: none; /* Prevent text selection on summary */
+        }
+        details summary:hover {
+            background: rgba(255, 255, 255, 0.12); /* Slightly more opaque on hover */
+        }
+        details summary::-webkit-details-marker {
+            display: none; /* Hide default marker */
+        }
+        details summary::after {
+            content: '+'; /* Custom plus sign */
+            font-size: 1.5rem;
+            margin-left: auto;
+            transition: transform 0.3s ease;
+            color: #ffffff; /* White plus/minus sign */
+        }
+        details[open] summary::after {
+            content: '-'; /* Custom minus sign when open */
+            transform: rotate(0deg); /* Reset rotation */
+        }
+        details[open] summary {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        details .content {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03); /* Slightly lighter glassmorphism for content */
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Sidebar specific styles */
+        .sidebar {
+            width: 250px;
+            min-width: 250px;
+            background: #111111; /* Darker sidebar background */
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease-in-out;
+            transform: translateX(0);
+        }
+        .sidebar.collapsed {
+            transform: translateX(-200px); /* Collapse most of it */
+            min-width: 50px;
+            width: 50px;
+        }
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .sidebar-item:hover {
+            background-color: rgba(255, 255, 255, 0.08); /* Subtle white hover */
+            color: #ffffff; /* White text on hover */
+        }
+        /* Updated active state for sidebar item */
+        .sidebar-item.active {
+            background-color: rgba(255, 255, 255, 0.1); /* A subtle, solid light grey */
+            color: #ffffff; /* White text for active item */
+            border-left: 3px solid #ffffff; /* Crisp white active border */
+        }
+        .sidebar-item .icon {
+            margin-right: 1rem;
+            font-size: 1.5rem;
+            line-height: 1;
+            color: #e0e0e0; /* Default icon color */
+            width: 24px; /* Ensure consistent width for SVG icons */
+            height: 24px; /* Ensure consistent height for SVG icons */
+            display: flex; /* Use flex to center SVG if needed */
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar.collapsed .sidebar-item .icon {
+            margin-right: 0;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* Top Nav Bar */
+        .top-nav {
+            background: rgba(17, 17, 17, 0.8); /* Very dark grey, almost black, transparent for depth */
+            backdrop-filter: blur(5px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Modal for alerts */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: linear-gradient(160deg, #111111, #000000); /* Dark grey to black gradient */
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 90%;
+            width: 400px;
+            text-align: center;
+            position: relative;
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .modal-close-button:hover {
+            color: #ffffff; /* White on hover */
+        }
+
+        /* Calendar specific styles */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 0.5fr repeat(7, 1fr); /* Time column + 7 days */
+            gap: 1px;
+            background-color: rgba(255, 255, 255, 0.1); /* Subtle lines */
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .calendar-header, .calendar-cell {
+            padding: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.6); /* Dark cell background */
+            text-align: center;
+            color: #e0e0e0;
+            font-size: 0.875rem;
+        }
+        .calendar-header {
+            font-weight: 600;
+            background-color: rgba(0, 0, 0, 0.8); /* Darker header */
+        }
+        .time-label {
+            background-color: rgba(0, 0, 0, 0.7); /* Darker time label */
+            font-weight: 500;
+            text-align: right;
+            padding-right: 1rem;
+        }
+        .calendar-cell.today {
+            border: 1px solid #ffffff; /* Highlight today */
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Ensure main content area can scroll */
+        main {
+            overflow-y: auto; /* Allows vertical scrolling if content exceeds height */
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+
+    <!-- Custom Modal for Alerts -->
+    <div id="customAlertModal" class="modal">
+        <div class="modal-content">
+            <button id="modalCloseX" class="modal-close-button">&times;</button>
+            <h3 id="alertTitle" class="text-xl font-semibold mb-4 text-white"></h3>
+            <p id="alertMessage" class="text-md text-gray-300"></p>
+            <button id="modalCloseOK" class="glow-button px-6 py-2 rounded-lg mt-6 text-white font-medium">OK</button>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar flex flex-col p-4 text-gray-300">
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center">
+                <svg class="w-8 h-8 text-white mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+                <span class="text-xl font-bold text-white text">SpiritLink</span>
+            </div>
+            <button id="sidebarToggle" class="text-gray-300 hover:text-white text-2xl px-2 text-text">☰</button>
+        </div>
+        <nav class="flex-grow">
+            <ul>
+                <li class="sidebar-item active" data-target="dashboardSection">
+                    <span class="icon">
+                        <!-- Alchemical Symbol for Sun (☉) - Dashboard/Center -->
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 8a4 4 0 100 8 4 4 0 000-8zM12 0a1 1 0 011 1v2a1 1 0 11-2 0V1a1 1 0 011-1zM12 21a1 1 0 01-1 1h2a1 1 0 01-1-1v-2a1 1 0 01-1-1zM21 12a1 1 0 011-1v2a1 1 0 01-1-1h-2a1 1 0 01-1-1zM1 12a1 1 0 011-1h2a1 1 0 01-1-1zM18.36 5.64a1 1 0 01.707-.293l1.414 1.414a1 1 0 01-.707 1.707l-1.414-1.414a1 1 0 01-.707-.293zM5.64 18.36a1 1 0 01-.707-.293l-1.414-1.414a1 1 0 01.707-1.707l1.414 1.414a1 1 0 01.707.293zM5.64 5.64a1 1 0 01-.707-.293l-1.414-1.414a1 1 0 01.707-1.707l1.414 1.414a1 1 0 01.707.293zM18.36 18.36a1 1 0 01-.707-.293l-1.414-1.414a1 1 0 01.707-1.707l1.414 1.414a1 1 0 01.707.293z"></path>
+                        </svg>
+                    </span><span class="text">Dashboard</span>
+                </li>
+                <li class="sidebar-item" data-target="coursesSection">
+                    <span class="icon">
+                        <!-- Alchemical Symbol for Sulphur (🜏) - Courses/Knowledge/Transformation -->
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L2 12h20L12 2zm0 10l-4 8h8l-4-8zM12 16a2 2 0 100-4 2 2 0 000 4z"></path>
+                        </svg>
+                    </span><span class="text">Courses</span>
+                </li>
+                <li class="sidebar-item" data-target="communitySection">
+                    <span class="icon">
+                        <!-- Alchemical Symbol for Salt (🜔) - Community/Connection/Foundation -->
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM4 12h16v2H4z"></path>
+                        </svg>
+                    </span><span class="text">Community</span>
+                </li>
+                <li class="sidebar-item" data-target="settingsSection">
+                    <span class="icon">
+                        <!-- Alchemical Symbol for Distillation (⚗) - Settings/Refinement -->
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 12h-2V7c0-2.76-2.24-5-5-5S7 4.24 7 7v5H5c-1.1 0-2 .9-2 2v6h18v-6c0-1.1-.9-2-2-2zm-8-5c0-1.65 1.35-3 3-3s3 1.35 3 3v5h-6V7z"></path>
+                        </svg>
+                    </span><span class="text">Settings</span>
+                </li>
+            </ul>
+        </nav>
+        <div class="mt-auto pt-4 border-t border-gray-700">
+            <li class="sidebar-item" data-target="settingsSection"> <!-- Profile leads to settings for this demo -->
+                <span class="icon">
+                    <!-- Alchemical Symbol for Spirit/Air (🜁) - Profile/Self/Individual -->
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 22h20L12 2z"></path>
+                    </svg>
+                </span><span class="text">Profile</span>
+            </li>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col bg-gradient-to-br from-[#0a0a0a] to-[#000000] p-4 sm:p-8">
+        <!-- Top Navigation Bar -->
+        <header class="top-nav flex items-center justify-between p-4 rounded-xl mb-8 shadow-lg">
+            <h1 id="mainTitle" class="text-2xl sm:text-3xl font-bold text-white">Welcome</h1>
+            <div class="flex items-center space-x-4">
+                <input type="text" id="courseSearchInput" placeholder="Search courses..." class="px-4 py-2 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white">
+                <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-semibold relative">
+                    <span id="userInitials">JL</span>
+                    <div id="glyphCountDisplay" class="absolute -top-2 -right-2 bg-purple-600 text-white text-xs font-bold rounded-full px-2 py-1">0 Glyphs</div>
+                    <div id="userIdDisplay" class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">User ID: DEMO_USER</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Sections -->
+        <section id="entryScreen" class="flex flex-col items-center justify-center flex-grow p-4 sm:p-8 rounded-2xl glassmorphism shadow-xl text-center">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">Welcome to SpiritLink OS</h2>
+            <p class="text-lg mb-8 text-gray-300 max-w-2xl">Prepare to embark on a journey of consciousness development, deprogramming, and true history. Your path to escaping the matrix begins here.</p>
+            <button id="startModuleBtn" class="glow-button px-8 py-3 rounded-lg text-white text-xl font-semibold">
+                Sigil Entry: Begin Module 1
+            </button>
+        </section>
+
+        <section id="dashboardSection" class="flex flex-col flex-grow p-4 sm:p-8 rounded-2xl glassmorphism shadow-xl text-center hidden">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">Dashboard</h2>
+            <p class="text-lg mb-8 text-gray-300 max-w-2xl">Your central hub for progress, insights, and quick access to your journey.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-6xl mx-auto">
+                <div class="p-6 rounded-xl glassmorphism text-left">
+                    <h3 class="text-xl font-semibold text-gray-100 mb-3">Recent Progress</h3>
+                    <p class="text-gray-300">Completed <span id="dashboardCompletedCoursesCount">0</span> courses.</p>
+                    <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+                        <div id="dashboardProgress" class="bg-white h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-1"><span id="dashboardArchetypeProgress">0%</span> of Deprogrammer Archetype completed</p>
+                </div>
+                <div class="p-6 rounded-xl glassmorphism text-left">
+                    <h3 class="text-xl font-semibold text-gray-100 mb-3">Next Steps</h3>
+                    <p class="text-gray-300">Continue with your journey or explore new modules.</p>
+                    <button class="glow-button px-4 py-2 rounded-lg text-white font-medium text-sm mt-4" onclick="showSection('coursesSection')">Go to Courses</button>
+                </div>
+
+                <!-- Performance Metrics Section -->
+                <div class="p-6 rounded-xl glassmorphism text-left">
+                    <h3 class="text-xl font-semibold text-gray-100 mb-3">Performance Metrics</h3>
+                    <p class="text-gray-300 mb-4">Track your growth and mastery across various aspects of your journey.</p>
+                    <ul class="list-disc list-inside text-gray-300 space-y-2">
+                        <li>**Consciousness Expansion:** <span class="font-bold text-white">Level 3 (Ascending)</span></li>
+                        <li>**Deprogramming Efficacy:** <span class="font-bold text-white">75%</span></li>
+                        <li>**Energy Flow Index:** <span class="font-bold text-white">Optimal</span></li>
+                        <li>**Mind-Body Harmony:** <span class="font-bold text-white">Stable</span></li>
+                    </ul>
+                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                        <p><strong>[Placeholder: Interactive Progress Graphs / Archetype Progression Chart]</strong></p>
+                        <p class="text-sm mt-2">Visual representation of your overall performance.</p>
+                    </div>
+                </div>
+
+                <!-- Mind-Body Disciplines Section -->
+                <div class="p-6 rounded-xl glassmorphism text-left">
+                    <h3 class="text-xl font-semibold text-gray-100 mb-3">Mind-Body Disciplines</h3>
+                    <div id="disciplinesDisplay" class="mb-4 text-gray-300">
+                        <p class="text-sm italic">No disciplines selected yet. Click "Manage" to add some!</p>
+                    </div>
+                    <button id="manageDisciplinesBtn" class="glow-button px-4 py-2 rounded-lg text-white font-medium text-sm">Manage Disciplines</button>
+
+                    <!-- Discipline Selection Interface (initially hidden) -->
+                    <div id="disciplineSelection" class="hidden mt-6 p-4 bg-gray-900 rounded-lg">
+                        <h4 class="text-lg font-semibold text-white mb-4">Select Your Disciplines (up to 4)</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-300">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="Yoga" class="form-checkbox h-4 w-4 text-white bg-gray-700 border-gray-600 rounded focus:ring-white">
+                                <span>Yoga</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="Meditation" class="form-checkbox h-4 w-4 text-white bg-gray-700 border-gray-600 rounded focus:ring-white">
+                                <span>Meditation</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="Martial Arts" class="form-checkbox h-4 w-4 text-white bg-gray-700 border-gray-600 rounded focus:ring-white">
+                                <span>Martial Arts</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="Breathwork" class="form-checkbox h-4 w-4 text-white bg-gray-700 border-gray-600 rounded focus:ring-white">
+                                <span>Breathwork</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="Detoxing" class="form-checkbox h-4 w-4 text-white bg-gray-700 border-gray-600 rounded focus:ring-white">
+                                <span>Detoxing</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="Dance" class="form-checkbox h-4 w-4 text-white bg-gray-700 border-gray-600 rounded focus:ring-white">
+                                <span>Dance</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="Journaling" class="form-checkbox h-4 w-4 text-white bg-gray-700 border-gray-600 rounded focus:ring-white">
+                                <span>Journaling</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" value="Nature Immersion" class="form-checkbox h-4 w-4 text-white bg-gray-700 border-gray-600 rounded focus:ring-white">
+                                <span>Nature Immersion</span>
+                            </label>
+                        </div>
+                        <button id="saveDisciplinesBtn" class="glow-button px-6 py-2 rounded-lg mt-6 text-white font-medium">Save Disciplines</button>
+                        <button id="cancelDisciplinesBtn" class="glow-button px-6 py-2 rounded-lg mt-6 ml-4 text-white font-medium">Cancel</button>
+                    </div>
+                </div>
+
+                <!-- Weekly Cosmic Calendar Section (Full Width) -->
+                <div class="lg:col-span-2 p-6 rounded-xl glassmorphism text-left">
+                    <h3 class="text-xl font-semibold text-gray-100 mb-4">Weekly Cosmic Calendar</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <button id="prevWeekBtn" class="glow-button px-3 py-1 rounded-md text-white text-sm">← Previous Week</button>
+                        <span id="currentWeekRange" class="text-lg font-medium text-white">July 8 - July 14, 2025</span>
+                        <button id="nextWeekBtn" class="glow-button px-3 py-1 rounded-md text-white text-sm">Next Week →</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <div class="calendar-grid min-w-[700px]">
+                            <div class="calendar-header">Time</div>
+                            <div class="calendar-header">Mon</div>
+                            <div class="calendar-header">Tue</div>
+                            <div class="calendar-header">Wed</div>
+                            <div class="calendar-header">Thu</div>
+                            <div class="calendar-header">Fri</div>
+                            <div class="calendar-header">Sat</div>
+                            <div class="calendar-header">Sun</div>
+
+                            <!-- Time Row 1 -->
+                            <div class="calendar-cell time-label">6 AM</div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Moon in Gemini</p>
+                                <p class="text-white mt-1">Morning Ritual</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Moon in Cancer</p>
+                                <p class="text-white mt-1">Breathwork</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Moon in Leo</p>
+                                <p class="text-white mt-1">Yoga Flow</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Moon in Virgo</p>
+                                <p class="text-white mt-1">Meditation</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Moon in Libra</p>
+                                <p class="text-white mt-1">Journaling</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Moon in Scorpio</p>
+                                <p class="text-white mt-1">Nature Walk</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Moon in Sagittarius</p>
+                                <p class="text-white mt-1">Free Movement</p>
+                            </div>
+
+                            <!-- Time Row 2 -->
+                            <div class="calendar-cell time-label">12 PM</div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Mercury Direct</p>
+                                <p class="text-white mt-1">Module 2 Study</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Venus in Leo</p>
+                                <p class="text-white mt-1">Community Check-in</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Mars in Taurus</p>
+                                <p class="text-white mt-1">Research Session</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Jupiter in Gemini</p>
+                                <p class="text-white mt-1">Discipline Practice</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Saturn in Pisces</p>
+                                <p class="text-white mt-1">Deep Dive</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Uranus in Taurus</p>
+                                <p class="text-white mt-1">Creative Flow</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Neptune in Pisces</p>
+                                <p class="text-white mt-1">Integration</p>
+                            </div>
+
+                            <!-- Time Row 3 -->
+                            <div class="calendar-cell time-label">6 PM</div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Sun in Cancer</p>
+                                <p class="text-white mt-1">Evening Reflection</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Full Moon</p>
+                                <p class="text-white mt-1">Energy Grounding</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">New Moon</p>
+                                <p class="text-white mt-1">Intention Setting</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Lunar Eclipse</p>
+                                <p class="text-white mt-1">Shadow Work</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Solar Eclipse</p>
+                                <p class="text-white mt-1">Rebirth Practice</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Solstice</p>
+                                <p class="text-white mt-1">Celebration</p>
+                            </div>
+                            <div class="calendar-cell">
+                                <p class="text-xs text-gray-400">Equinox</p>
+                                <p class="text-white mt-1">Balance Practice</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-4">
+                        <span class="font-bold text-white">Note:</span> Astronomical positions are simulated for demonstration. In a live system, this would integrate with real-time celestial data.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="coursesSection" class="flex flex-col flex-grow p-4 sm:p-8 rounded-2xl glassmorphism shadow-xl text-center hidden">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">Courses</h2>
+            <p class="text-lg mb-8 text-gray-300 max-w-2xl mx-auto">Your journey through consciousness development, deprogramming, and true history.</p>
+
+            <!-- Course Listing - always visible when in coursesSection, hides specific modules -->
+            <div id="courseListing" class="flex flex-col items-center w-full">
+                <p class="text-lg mb-8 text-gray-300 max-w-2xl mx-auto">Continue your journey through these transformative courses.</p>
+
+                <!-- Course previews will be dynamically loaded here by JavaScript -->
+
+            </div>
+
+            <!-- Individual Module Pages (initially hidden) -->
+            <!-- These divs will have their content dynamically loaded -->
+            <div id="natureOfRealityModule" class="max-w-4xl w-full mx-auto hidden"></div>
+            <div id="quantumConsciousnessModule" class="max-w-4xl w-full mx-auto hidden"></div>
+            <div id="societalConditioningModule" class="max-w-4xl w-full mx-auto hidden"></div>
+            <div id="scientificTheoriesModule" class="max-w-4xl w-full mx-auto hidden"></div>
+            <div id="ancientCivilizationsModule" class="max-w-4xl w-full mx-auto hidden"></div>
+            <div id="emotionalIntelligenceModule" class="max-w-4xl w-full mx-auto hidden"></div>
+            <div id="energyVibrationModule" class="max-w-4xl w-full mx-auto hidden"></div>
+            <div id="suppressedScienceModule" class="max-w-4xl w-full mx-auto hidden"></div>
+            <div id="deconstructingBeliefsModule" class="max-w-4xl w-full mx-auto hidden"></div>
+            <div id="meditationMindfulnessModule" class="max-w-4xl w-full mx-auto hidden"></div>
+            <div id="cosmicHistoryModule" class="max-w-4xl w-full mx-auto hidden"></div>
+
+        </section>
+
+        <section id="communitySection" class="flex flex-col flex-grow p-4 sm:p-8 rounded-2xl glassmorphism shadow-xl text-center hidden">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">Community</h2>
+            <p class="text-lg mb-8 text-gray-300 max-w-2xl mx-auto">Connect with other seekers on the path to awakening. Share insights, ask questions, and grow together.</p>
+            <div class="p-6 rounded-xl glassmorphism text-left max-w-2xl w-full mx-auto">
+                <h3 class="text-xl font-semibold text-gray-100 mb-3">Community Forum (Placeholder)</h3>
+                <p class="text-gray-300 mb-4">Engage in discussions, share your experiences, and collaborate on deprogramming challenges.</p>
+                <button class="glow-button px-4 py-2 rounded-lg text-white font-medium text-sm">Access Forum</button>
+            </div>
+        </section>
+
+        <section id="settingsSection" class="flex flex-col flex-grow p-4 sm:p-8 rounded-2xl glassmorphism shadow-xl text-center hidden">
+            <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">Settings & Profile</h2>
+            <p class="text-lg mb-8 text-gray-300 max-w-2xl mx-auto">Manage your account, personalize your experience, and review your progress.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mx-auto">
+                <div class="p-6 rounded-xl glassmorphism text-left">
+                    <h3 class="text-xl font-semibold text-gray-100 mb-3">Personal Information</h3>
+                    <p class="text-gray-300 mb-2">Initials: <span id="profileInitials" class="font-bold">JL</span></p>
+                    <p class="text-gray-300">User ID: <span id="profileUserId" class="font-bold">DEMO_USER</span></p>
+                    <button class="glow-button px-4 py-2 rounded-lg text-white font-medium text-sm mt-4">Edit Profile</button>
+                </div>
+                <div class="p-6 rounded-xl glassmorphism text-left">
+                    <h3 class="text-xl font-semibold text-gray-100 mb-3">Account Security</h3>
+                    <p class="text-gray-300 mb-4">Review and update your security settings.</p>
+                    <button class="glow-button px-4 py-2 rounded-lg text-white font-medium text-sm">Security Settings</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        // --- Custom Alert Modal Functions (Moved to global scope) ---
+        function showCustomAlert(title, message) {
+            console.log(`Alert: ${title} - ${message}`);
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMessage').innerText = message;
+            document.getElementById('customAlertModal').style.display = 'flex'; // Use flex to center
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').style.display = 'none';
+        }
+
+        // --- Courses Data: Single Source of Truth for Module Content ---
+        const coursesData = {
+            natureOfRealityModule: {
+                id: 'natureOfRealityModule',
+                title: 'Understanding the Matrix: The Nature of Reality & Perception',
+                description: 'Initiate your journey into deprogramming by revealing how your reality is constructed and perceived.',
+                glyphReward: 5,
+                contentHtml: `
+                    <p class="text-lg mb-8 text-gray-300">Welcome, Seeker. This module initiates your journey into deprogramming, revealing how your reality is constructed and perceived.</p>
+
+                    <!-- Multisensory Integration Layer Placeholder -->
+                    <div class="mb-8 p-4 rounded-xl glassmorphism text-left">
+                        <h3 class="text-xl font-semibold text-gray-100 mb-3">Multisensory Integration: Entering the Module</h3>
+                        <p class="text-gray-300 mb-2">Before we begin, engage your senses. Take a moment for a deep breathwork exercise or listen to a brief sound ritual to align your awareness.</p>
+                        <button class="glow-button px-4 py-2 rounded-lg text-white font-medium text-sm mt-2">Start Breathwork/Sound Ritual</button>
+                        <p class="text-gray-300 mt-4">As you prepare, mentally trace or draw this sigil to "enter" the module:</p>
+                        <div class="flex justify-center mt-4 mb-4">
+                            <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 1L3 6v6c0 5.5 4.5 10 9 10s9-4.5 9-10V6l-9-5zM12 2.236L19.764 6 12 9.764 4.236 6 12 3.236zM4 7.5v4.5c0 4.025 3.102 7.34 7 7.93V12h-7zM12 19.93c3.898-.59 7-3.905 7-7.93V7.5h-7v12.43z"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Core Concepts with Progressive Disclosure -->
+                    <div class="space-y-6 mb-8 text-left">
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">The Science of Perception: Your Brain as a Reality Engine</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">Scientifically, your brain doesn't just passively receive reality; it actively constructs it. Sensory inputs (light, sound, touch) are mere data points. Your brain then interprets, predicts, and fills in the gaps based on past experiences, beliefs, and expectations. This process, known as **predictive coding**, means what you "see" or "hear" is often a sophisticated hallucination, a best guess of reality. This module will delve into the neural mechanisms that create your subjective experience, demonstrating how your brain is less a window to reality and more a powerful, predictive filter. Understanding this fundamental principle is the first step in deprogramming.</p>
+                                <p class="text-gray-300">Neuroscience shows how neural pathways are strengthened by repeated experiences, creating mental models that filter and shape your perception. This is why two people can witness the same event and have vastly different recollections. We will explore studies on sensory deprivation, optical illusions, and the brain's default mode network to illustrate the active, constructive nature of perception.</p>
+                                <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                    <p><strong>[Placeholder: Interactive Brain Diagram / Neural Network Animation]</strong></p>
+                                    <p class="text-sm mt-2">Visualize how your brain processes sensory input into perceived reality.</p>
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">Metaphysics of Reality: Consciousness as the Prime Mover</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">From a metaphysical perspective, reality is not merely perceived but *projected* by consciousness. The **observer effect** in quantum physics, where the act of observation influences the outcome of an experiment, hints at this deeper truth. This concept suggests that at the subatomic level, particles exist in a state of probability until observed, at which point they "collapse" into a definite state. Ancient wisdom traditions, from Hermetic philosophy to Eastern mysticism, speak of a universal consciousness (often referred to as the "Akashic Field" or "Divine Mind") from which all manifest reality springs.</p>
+                                <p class="text-gray-300">Your individual consciousness, therefore, isn't just a passive recipient; it's an active co-creator. Your beliefs, intentions, and emotional state resonate at a vibrational frequency that shapes the reality you experience. This aligns with the Hermetic principle of "As Above, So Below" – the microcosm of your mind reflects the macrocosm of universal creation. We will explore the idea that your internal state directly influences your external reality, making you a powerful architect of your experience.</p>
+                                <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                    <p><strong>[Placeholder: Quantum Double-Slit Experiment Animation / Vibrational Frequency Graph]</strong></p>
+                                    <p class="text-sm mt-2">Explore the observer effect and the concept of vibrational resonance.</p>
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">Live Notations: Evolving Insights</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">As you delve deeper, new connections emerge. Consider how societal narratives (Module 2) exploit the brain's predictive coding to implant specific "reality programs." Your personal history isn't just a sequence of events; it's a deeply ingrained set of filters, a personal operating system that dictates your default responses to the world.</p>
+                                <p class="text-gray-300">**Insight:** The "Matrix" isn't just an external system; it's also an internal construct, a set of deeply held beliefs and perceptual filters that dictate what you allow yourself to experience as real. Deprogramming begins with recognizing these filters, understanding their origins, and consciously choosing to rewrite your internal code. This foundational module empowers you to question the very fabric of your perceived reality, preparing you for the deeper deprogramming work ahead.</p>
+                            </div>
+                        </details>
+                    </div>
+
+                    <!-- Practical Exercise -->
+                    <div class="mb-8 p-6 rounded-xl glassmorphism text-left">
+                        <h3 class="text-xl font-semibold text-gray-100 mb-3">Practical Exercise: The Observer's Gaze</h3>
+                        <p class="text-gray-300 mb-4">For the next 24 hours, practice conscious observation. When you encounter a situation or piece of information, pause and ask yourself:</p>
+                        <ul class="list-disc list-inside text-gray-300 space-y-2 mb-4">
+                            <li>"What am I *assuming* about this, based on my past experiences and beliefs?"</li>
+                            <li>"What emotions are arising within me, and how might they be coloring my perception of this situation?"</li>
+                            <li>"What alternative interpretations could exist if I approached this with a completely open mind, free from pre-conceived notions?"</li>
+                        </ul>
+                        <textarea id="reflectionJournal" class="w-full h-32 p-3 rounded-lg bg-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white" placeholder="Journal your observations here..."></textarea>
+                        <button class="glow-button px-6 py-2 rounded-lg mt-4 text-white font-medium" data-journal-id="reflectionJournal">Save Reflection</button>
+                    </div>
+
+                    <!-- Memory Anchor Glyph (Restored) -->
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-gray-100 mb-4">Memory Anchor Glyph: Encode Your Insight</h3>
+                        <p class="text-gray-300 mb-4">To lock in the insights from this module, mentally trace or physically draw this glyph. Let it symbolize your newfound understanding of reality's fluid nature and your power to consciously shape your perception.</p>
+                        <svg class="w-20 h-20 text-white mx-auto" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                        </svg>
+                        <p class="text-sm text-gray-500 mt-2">The "Consciousness Shift" Glyph</p>
+                    </div>
+
+
+                    <!-- Quantum Feedback Protocol -->
+                    <div class="mb-8 p-6 rounded-xl glassmorphism text-left">
+                        <h3 class="text-xl font-semibold text-gray-100 mb-3">Quantum Feedback Protocol</h3>
+                        <p class="text-gray-300 mb-4">Observe how your reality responds to your shifting perception. Journal any subtle changes or synchronicities you notice in your inner and outer world:</p>
+                        <ul class="list-disc list-inside text-gray-300 space-y-2 mb-4">
+                            <li>What shifted in your dream world? Did you experience more vivid dreams, lucid dreams, or symbolic messages?</li>
+                            <li>Did any synchronicities appear in your waking life? (e.g., encountering specific numbers, hearing relevant conversations, meeting unexpected people)</li>
+                            <li>What symbolic pattern keeps reappearing in your thoughts, observations, or interactions?</li>
+                        </ul>
+                        <textarea id="quantumFeedbackJournal" class="w-full h-32 p-3 rounded-lg bg-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white" placeholder="Record your quantum feedback here..."></textarea>
+                        <button class="glow-button px-6 py-2 rounded-lg mt-4 text-white font-medium" data-journal-id="quantumFeedbackJournal">Submit Feedback</button>
+                    </div>
+
+                    <button class="glow-button px-8 py-3 rounded-lg text-white text-xl font-semibold mt-8" data-module-id="natureOfRealityModule">Complete Module</button>
+                `
+            },
+            quantumConsciousnessModule: {
+                id: 'quantumConsciousnessModule',
+                title: 'Quantum Consciousness & Unified Field Theories: Breakthrough Evidence',
+                description: 'Explore cutting-edge research revealing consciousness as a fundamental quantum field phenomenon.',
+                glyphReward: 10,
+                contentHtml: `
+                    <p class="text-lg mb-8 text-gray-300">Explore cutting-edge research revealing consciousness as a fundamental quantum field phenomenon.</p>
+
+                    <div class="space-y-6 mb-8 text-left">
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">Zero-Point Field Theories of Consciousness</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">The **TRAZE (Through Resonant Amplification of Zero-point modes) theory** represents a groundbreaking approach to consciousness that positions the zero-point field (ZPF) as the fundamental substrate of awareness. This model proposes that consciousness arises through **resonant glutamate-ZPF coupling** in cortical microcolumns, where pyramidal neurons act as quantum oscillators filtering specific frequency ranges from the zero-point field spectrum. Each normal mode of the ZPF is theorized to correspond to an elementary shade of consciousness, with the brain functioning as a "keyboard" for composing phenomenal states. Critical brain dynamics, resulting from the brain's coupling to the ZPF, enable phase transitions that transcend the threshold of consciousness. The TRAZE model predicts that disrupting glutamate-ZPF coupling would eliminate conscious perceptions under controlled experimental conditions, providing a testable framework for validation.</p>
+                                <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                    <p><strong>[Placeholder: Diagram of Glutamate-ZPF Coupling / Frequency Spectrum Visualization]</strong></p>
+                                    <p class="text-sm mt-2">Visualize the theoretical interaction between neurotransmitters and the zero-point field.</p>
+                                </div>
+                            </div>
+                        </details>
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">Electromagnetic Field Theories: The Epineural Field</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">Beyond classical neuroscience, recent theoretical developments propose that consciousness arises from an **epineural electromagnetic field** that unifies distributed neuronal information processing. This field theory addresses the binding problem in consciousness by suggesting that only through physical integration in space within an electromagnetic field can phenomenal consciousness emerge. The binding component is theorized to operate through virtual photons rather than electromagnetic radiation, maintaining material involvement of charge carriers. This electromagnetic field is posited to arise from the folded "electrolyte carpet" of the cerebral cortex, creating a three-dimensional field of hydrated ions. Experimental validation for this theory requires electromagnetic field shielding rather than external stimulation to isolate field effects from neural processing. The convergence of electromagnetic field theories with biofield science further suggests that biological systems maintain macroscopic quantum coherence through these field interactions, with biophoton emission potentially providing a nonbiochemical source of cellular guidance.</p>
+                                <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                    <p><strong>[Placeholder: 3D Model of Epineural Field / Biofield Interaction Diagram]</strong></p>
+                                    <p class="text-sm mt-2">Explore the concept of consciousness emerging from the brain's electromagnetic field.</p>
+                                </div>
+                            </details>
+                        </details>
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">Quantum Entanglement in Biological Systems</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">Breakthrough 2024 research from Shanghai University demonstrates that myelin sheaths surrounding nerve axons provide environments where **quantum entanglement of photons is possible**. The cylindrical cavity formed by myelin sheaths facilitates spontaneous photon emission from vibrational modes, generating significant numbers of entangled photon pairs that could explain neural synchronization essential for consciousness. The abundance of C-H bond vibration units in neurons serves as a source of quantum entanglement resources for the nervous system, enabling coherent neural synchronization that underlies higher-order cognitive functions. Furthermore, groundbreaking 2024 studies provide experimental evidence supporting quantum theories of consciousness through microtubule interactions. When rats were given drugs that bind to microtubules, they required significantly longer to become unconscious under anesthetic gases, supporting the quantum model over classical physics theories. Microtubule interiors are modeled as high-Q quantum electrodynamics cavities exhibiting decoherence times of seconds, with tubulin dimers functioning as biological qubits with quantum coherence lasting hundreds of femtoseconds—sufficient for biological information processing. Microtubule networks are also theorized to support logic-gate behavior and optimal path selection for energy-loss-free signal transport.</p>
+                                <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                    <p><strong>[Placeholder: Animation of Myelin Sheath Entanglement / Microtubule Quantum Model]</strong></p>
+                                    <p class="text-sm mt-2">Witness how quantum phenomena might be at play within your own neural networks.</p>
+                                </div>
+                            </div>
+                        </details>
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">Biophoton Field Theory and Consciousness</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">Revolutionary research demonstrates that consciousness can be understood as arising from **biophoton field interactions with DNA molecules**. The theoretical framework proposes that collective neural interactions produce macroergic effects generating strong electric fields that induce biophoton emission through quantum processes. Alpha-helical integral proteins are thought to create electro-solitons that interact with DNA molecules, leading to DNA conformational changes that produce ultra-weak, non-thermal spontaneous emission of coherent biophotons. The biophoton field is theorized to become a conscious field upon re-absorption by exciplex states of DNA molecules. Cutting-edge studies further reveal that different neurotransmitters play distinct roles in consciousness through biophoton field modulation. Glutamate-induced biophotonic activity is believed to form the basic information stream of subconsciousness, while other neurotransmitters (acetylcholine, dopamine, norepinephrine) contribute to altered conscious states. GABA, for instance, enhances glutamate-induced biophotonic activity, supporting consciousness maintenance, while serotonin acts as a major inhibitor of consciousness-related biophotonic activity.</p>
+                                <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                    <p><strong>[Placeholder: Biophoton Emission Visualization / DNA-Biophoton Interaction Model]</strong></p>
+                                    <p class="text-sm mt-2">Explore the illuminating connection between light, DNA, and consciousness.</p>
+                                </div>
+                            </div>
+                        </details>
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">Coherence Domains and Biological Organization</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">Advanced research demonstrates that **coherence domains in water** play crucial roles in biological organization and consciousness. These domains exhibit quantum coherent behavior characterized by strong phase correlation between matter and electromagnetic fields trapped within living systems. Coherence domains are theorized to accumulate and utilize low entropy energy to support life processes, with the energy and mass of particles arising from quantum vacuum dynamics exhibiting coherent behavior. These domains also regulate biophoton emission through quantum vacuum energy exchanges. Emerging theories further propose that **crystalline structures in biological systems** serve as quantum interfaces for consciousness. These biocrystalline networks act as harmonic resonators and fractal antennae capable of receiving and transmitting subtle electromagnetic signals across dimensional planes. Crystalline lattices provide stable frameworks for sustained quantum coherence, function as frequency transducers converting between different frequency domains of consciousness, and modulate intrinsic biomagnetic fields and circadian rhythms.</p>
+                                <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                    <p><strong>[Placeholder: Water Coherence Domain Animation / Biocrystalline Network Diagram]</strong></p>
+                                    <p class="text-sm mt-2">Understand the role of water and crystalline structures in maintaining quantum coherence.</p>
+                                </div>
+                            </div>
+                        </details>
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">Global Coherence and Consciousness Fields</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">The Global Coherence Initiative has established a worldwide network of ultrasensitive magnetometers demonstrating that **human consciousness interacts with Earth's electromagnetic field environment**. Studies show that geomagnetic field disturbances correlate with changes in human mental and emotional states, with human brain waves responding to controlled changes in Earth-strength magnetic fields. This suggests a deep interconnectedness between individual consciousness and planetary fields. Furthermore, research on **collective consciousness effects** indicates that global events correlate with coherent behavior among random number generators worldwide, hinting at a non-local influence of collective human intention. Large groups in coherent states are theorized to generate measurable effects on Earth's electromagnetic environment. Contemporary research also continues to provide evidence for **morphic resonance effects** in biological systems. Controlled experiments demonstrate that learning patterns can be transmitted across similar systems without known physical connections, suggesting a "formative causation" where past forms influence present development through morphic field resonance, contributing to a collective memory that affects species-wide learning and individual acquisition of behaviors and skills. Morphic fields are observed to exhibit nonlocal correlations resembling quantum entanglement.</p>
+                                <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                    <p><strong>[Placeholder: Global Coherence Map / Morphic Field Simulation]</strong></p>
+                                    <p class="text-sm mt-2">Explore the interconnectedness of human consciousness with Earth and collective fields.</p>
+                                </div>
+                            </div>
+                        </details>
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">Superluminal Information Transfer</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">Recent theoretical work explores **superluminal communication possibilities** in biological systems through quantum entanglement and field interactions. The Trans-Spatiotemporal Bio-Information Fusion System (TSBIFS) framework integrates quantum entanglement, gravitational waves, and biological networks for information transfer beyond classical limitations. This suggests that biological systems may utilize entangled particles for instantaneous information transfer and interact with gravitational wave communications, potentially even involving tachyonic processes (hypothetical faster-than-light particles). Furthermore, **delayed choice quantum eraser experiments** demonstrates that future measurements can influence past quantum states, raising profound questions about the temporal nature of consciousness and information. While controversial, these experiments suggest that consciousness might operate through retrocausal quantum mechanisms, where future decisions determine past quantum states and observer effects in quantum mechanics may involve consciousness directly.</p>
+                                <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                    <p><strong>[Placeholder: Quantum Teleportation Diagram / Delayed Choice Experiment Animation]</strong></p>
+                                    <p class="text-sm mt-2">Challenge your understanding of time and information transfer.</p>
+                                </div>
+                            </div>
+                        </details>
+                        <details class="glassmorphism rounded-xl">
+                            <summary class="font-semibold text-white">Emerging Quantum Biology Frontiers</summary>
+                            <div class="content">
+                                <p class="mb-3 text-gray-300">Breakthrough 2024 research reveals that **tryptophan networks in cells** function as biological quantum fiber optics, processing information at picosecond speeds—billions of times faster than classical neural signaling. These networks exhibit superradiance effects and natural quantum error correction, acting as biological qubits under UV activation, with quantum coherence in tryptophan filaments lasting hundreds of femtoseconds. Revolutionary theoretical frameworks also propose that **consciousness operates on cosmic scales** through quantum field interactions. The Quantum Cosmic Consciousness Code (QCCC) suggests that neural coherence patterns correlate with cosmic quantum field fluctuations, with up to 80% of neural coherence variance correlating with cosmic quantum patterns. This framework posits a universal quantum syntax where DNA resonance codes align with cosmic quantum field frequencies, suggesting that consciousness bridges quantum mechanics and cosmology through macroscopic quantum field interactions.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Tryptophan Quantum Network Model / Cosmic-Neural Correlation Graph]</strong></p>
+                                        <p class="text-sm mt-2">Discover the cutting-edge of quantum biology and its cosmic implications.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Implications for Consciousness Studies</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This convergence of evidence suggests that **consciousness emerges from quantum field interactions** that bridge the gap between subjective experience and objective reality. The zero-point field provides the fundamental substrate for phenomenal qualities, while biological quantum coherence enables the organization of conscious experience, offering a potential solution to the "hard problem" of consciousness. This research also opens pathways for revolutionary technologies, including **quantum neural networks** based on biological quantum entanglement principles for exponential computational gains, **consciousness-computer interfaces** through direct quantum field interactions with technological systems, and **therapeutic quantum devices** for targeted quantum field modulation for neurological disorders. Ultimately, the evidence points toward a **unified field theory of consciousness** where quantum fields serve as the fundamental medium for information, energy, and awareness. This framework suggests that consciousness is not merely an emergent property of complex systems but a fundamental feature of reality itself, operating through quantum field mechanisms at multiple scales from molecular to cosmic.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Unified Field Diagram / Future Tech Concepts]</strong></p>
+                                        <p class="text-sm mt-2">Contemplate the profound implications of quantum consciousness for humanity.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    `
+                },
+                societalConditioningModule: {
+                    id: 'societalConditioningModule',
+                    title: 'Understanding the Matrix: Societal Conditioning & Narrative Control',
+                    description: 'Uncover the hidden forces that shape collective thought and perception.',
+                    glyphReward: 7,
+                    contentHtml: `
+                        <p class="text-lg mb-8 text-gray-300">Uncover the hidden forces that shape collective thought and perception.</p>
+                        <div class="space-y-6 mb-8 text-left">
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">The Architecture of Consent: Media & Propaganda</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This section dissects the mechanisms through which mainstream media, social platforms, and educational systems construct and disseminate narratives designed to guide public opinion and maintain societal consensus. We will explore the historical evolution of propaganda, from early 20th-century public relations to modern digital influence campaigns. Understanding the psychological principles behind effective propaganda, such as framing, repetition, emotional appeals, and the creation of echo chambers, is crucial for discerning truth from manipulation. Case studies will highlight instances where media narratives have significantly shaped collective perception and behavior.</p>
+                                    <p class="mb-3 text-gray-300">Further, we examine the **agenda-setting function** of media, where the prominence given to certain issues influences the public's perception of their importance. This isn't just about *what* to think, but *what to think about*. We'll also explore the concept of **manufactured consent**, a term coined by Edward S. Herman and Noam Chomsky, which describes how mass media can be used to control public opinion in advanced industrial democracies.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Video - "Manufacturing Consent" Explainer]</strong></p>
+                                        <p class="text-sm mt-2">Visual analysis of media influence techniques.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Cultural Programming: From Childhood to Adulthood</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">Beyond overt media, cultural programming subtly shapes our values, beliefs, and behaviors from our earliest years. This module examines how cultural norms, traditions, family dynamics, and entertainment (e.g., movies, music, video games) implant specific worldviews and expectations. We will analyze the underlying messages embedded in popular culture, educational curricula, and social rituals that reinforce existing power structures and limit individual thought. Recognizing these pervasive influences is the first step towards deprogramming your deeply ingrained cultural operating system and reclaiming your authentic self.</p>
+                                    <p class="mb-3 text-gray-300">This includes the **normalization of certain behaviors and ideologies** through constant exposure, and the **reinforcement of societal roles** that may not align with individual potential. We'll look at how concepts like consumerism, success metrics, and even the perception of time are culturally constructed and perpetuated, influencing our fundamental relationship with reality and self-identity.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Infographic - "Cultural Programming Pathways"]</strong></p>
+                                        <p class="text-sm mt-2">Illustrates the various channels of societal conditioning.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">The Digital Panopticon: Algorithmic Control & Data Manipulation</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">In the digital age, control mechanisms have become more sophisticated and pervasive. This section explores the concept of the **digital panopticon**, where constant surveillance and data collection create an environment of self-censorship and conformity. We will analyze how algorithms on social media, search engines, and e-commerce platforms create personalized information bubbles, or **filter bubbles**, that reinforce existing biases and limit exposure to diverse perspectives, effectively shaping individual realities. The manipulation of data, from targeted advertising to political micro-targeting, demonstrates a new frontier in narrative control, where individual behavior can be predicted and influenced with unprecedented precision. Understanding these digital architectures is critical for navigating the modern information landscape and maintaining cognitive autonomy.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Diagram of Algorithmic Filter Bubble / Data Flow Visualization]</strong></p>
+                                        <p class="text-sm mt-2">Visualize how digital systems influence perception and behavior.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    `
+                },
+                scientificTheoriesModule: {
+                    id: 'scientificTheoriesModule',
+                    title: 'The Nature of Consciousness: Scientific Theories',
+                    description: 'Delve into cutting-edge scientific perspectives on what consciousness truly is, from integrated information theory to quantum models and predictive processing.',
+                    glyphReward: 8,
+                    contentHtml: `
+                        <p class="text-lg mb-8 text-gray-300">Delve into cutting-edge scientific perspectives on what consciousness truly is.</p>
+                        <div class="space-y-6 mb-8 text-left">
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Integrated Information Theory (IIT)</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">Integrated Information Theory (IIT), proposed by neuroscientist Giulio Tononi, is one of the leading contemporary scientific theories of consciousness. IIT posits that consciousness is a fundamental property of systems that are both highly integrated (meaning their components interact richly) and highly differentiated (meaning they have a vast repertoire of distinct states). The theory quantifies consciousness using a measure called 'phi' ($\Phi$), where a higher phi value indicates a higher level of consciousness. This section will break down the core axioms and postulates of IIT, explaining concepts like cause-effect power, intrinsic existence, and composition, and how they contribute to a system's capacity for consciousness. We will also discuss its implications for artificial intelligence and understanding different states of awareness.</p>
+                                    <p class="mb-3 text-gray-300">Key to IIT is the idea that consciousness is not merely a byproduct of complex computation, but rather *is* the integrated information itself. The theory suggests that any physical system with a high $\Phi$ value, whether biological or artificial, could possess consciousness. This framework provides a mathematical and conceptual tool for exploring the "what it's like" aspect of experience, moving beyond simply identifying neural correlates of consciousness to defining the very nature of phenomenal experience.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Animated Explainer Video - "What is IIT?"]</strong></p>
+                                        <p class="text-sm mt-2">Visualizing the concepts of integration and differentiation in consciousness.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Quantum Consciousness & Microtubules</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This section investigates the controversial but intriguing hypothesis that consciousness arises from quantum processes within the brain's microtubules. Proposed by physicist Roger Penrose and anesthesiologist Stuart Hameroff, the "Orchestrated Objective Reduction" (Orch-OR) theory suggests that consciousness is not merely an emergent property of classical neural computation but involves non-computable quantum effects occurring within protein structures called microtubules, found inside neurons. We will explore the arguments for and against this theory, including the challenges of maintaining quantum coherence in the warm, wet environment of the brain, and the potential implications if such quantum phenomena indeed play a role in the hard problem of consciousness.</p>
+                                    <p class="mb-3 text-gray-300">Orch-OR posits that consciousness emerges from **objective reductions** (OR) of quantum superpositions in microtubules, which are "orchestrated" (Orch) by synaptic inputs and memory. These orchestrated OR events are proposed to be the actual moments of conscious experience. The theory attempts to bridge the gap between quantum mechanics and neuroscience, suggesting that the non-local and non-computable aspects of quantum reality are essential for explaining the unique properties of consciousness, such as subjective experience and free will.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: 3D Animation - Microtubule Quantum Activity]</strong></p>
+                                        <p class="text-sm mt-2">An animated model showing theoretical quantum events in brain structures.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Global Workspace Theory & Predictive Processing</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">The **Global Workspace Theory (GWT)**, primarily associated with Bernard Baars, proposes that consciousness acts like a "global workspace" or a central broadcasting system in the brain. Information that enters this workspace becomes widely available to various unconscious specialized processors (e.g., sensory systems, memory, motor control). When information is broadcast globally, it becomes conscious. This theory offers a framework for understanding how distributed brain activity can give rise to a unified, conscious experience, addressing aspects of the binding problem. It suggests that consciousness is a mechanism for coordinating and integrating information across the brain.</p>
+                                    <p class="mb-3 text-gray-300">Complementing GWT is the concept of **Predictive Processing**, which posits that the brain is fundamentally a prediction machine. Instead of passively receiving sensory input, the brain constantly generates predictions about the world and then updates these predictions based on incoming sensory data. Consciousness, in this view, arises from the brain's effort to minimize prediction error. This framework suggests that our perceived reality is a dynamic, constantly evolving model constructed by the brain, and that conscious experience is intricately tied to the continuous process of prediction and error correction.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Diagram of Global Workspace Model / Predictive Coding Flowchart]</strong></p>
+                                        <p class="text-sm mt-2">Visualize how the brain integrates information and predicts reality.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    `
+                },
+                ancientCivilizationsModule: {
+                    id: 'ancientCivilizationsModule',
+                    title: 'Ancient Civilizations & Lost Technologies: Rethinking Pre-Diluvian History',
+                    description: 'Challenge conventional historical narratives and explore evidence of advanced ancient cultures, from Gobekli Tepe to anomalous Egyptian machining.',
+                    glyphReward: 12,
+                    contentHtml: `
+                        <p class="text-lg mb-8 text-gray-300">Challenge conventional historical narratives and explore evidence of advanced ancient cultures.</p>
+                        <div class="space-y-6 mb-8 text-left">
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">The Enigma of Gobekli Tepe</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">Gobekli Tepe, located in southeastern Turkey, is an archaeological site that has dramatically reshaped our understanding of early human civilization. Dating back to approximately 9,600 BCE, it predates the invention of agriculture, the wheel, and even pottery. This megalithic complex features massive, intricately carved T-shaped pillars arranged in circular enclosures, suggesting sophisticated astronomical knowledge and complex social organization among hunter-gatherer societies. This section will delve into the discovery and significance of Gobekli Tepe, challenging the linear progression of human development taught in conventional history and proposing a more complex, perhaps even cyclical, view of ancient human capabilities.</p>
+                                    <p class="mb-3 text-gray-300">The precision of the carvings and the sheer scale of the construction at Gobekli Tepe raise questions about the capabilities of its builders. The site's deliberate burial around 8,000 BCE, rather than natural decay, suggests a conscious decision to preserve or conceal it. This raises further questions about the knowledge possessed by these early societies and why such monumental efforts were undertaken before the advent of settled agriculture, which is conventionally seen as a prerequisite for large-scale construction.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Satellite Imagery / 3D Reconstruction of Gobekli Tepe]</strong></p>
+                                        <p class="text-sm mt-2">Visual tour of the ancient megalithic site.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Advanced Machining in Ancient Egypt?</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This module examines anomalies in ancient Egyptian artifacts that raise questions about the technological capabilities of the dynastic Egyptians. We will explore evidence such as precision drill holes found in granite and diorite, the incredible flatness and exact angles of massive stone blocks, and the mysterious "sarcophagi" of the Serapeum, which exhibit machining tolerances seemingly beyond the known tools and methods of the era. These observations lead some researchers to propose the existence of lost ancient technologies, perhaps even involving advanced machining or energy sources, that are not accounted for in mainstream archaeology. We will analyze the arguments and counter-arguments, encouraging critical thinking about historical narratives.</p>
+                                    <p class="mb-3 text-gray-300">Specific examples include the perfectly symmetrical granite boxes at the Serapeum, weighing up to 100 tons, with interiors polished to a mirror finish and corners cut with extreme precision. The methods to achieve such feats with copper tools and manual labor remain a subject of intense debate. Furthermore, the presence of **saw marks and drill holes** that appear to be made by tools far more advanced than those conventionally attributed to the Egyptians prompts a re-evaluation of their technological understanding. This section encourages an engineering perspective on these ancient constructions, analyzing the material science and physics required to achieve such results.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: High-Resolution Images of Anomalous Artifacts / Comparison Graphics]</strong></p>
+                                        <p class="text-sm mt-2">Close-ups and comparative analysis of ancient artifacts.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    `
+                },
+                emotionalIntelligenceModule: {
+                    id: 'emotionalIntelligenceModule',
+                    title: 'Emotional Intelligence & Shadow Work: Mapping the Emotional Landscape',
+                    description: 'Understand the hidden currents of your emotional world and begin the journey of integration, exploring neuroscience and identifying triggers.',
+                    glyphReward: 6,
+                    contentHtml: `
+                        <p class="text-lg mb-8 text-gray-300">Understand the hidden currents of your emotional world and begin the journey of integration.</p>
+                        <div class="space-y-6 mb-8 text-left">
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">The Neuroscience of Emotion</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This section delves into the biological underpinnings of human emotion. We will explore the key brain regions involved in emotional processing, such as the amygdala (often associated with fear and threat detection), the hippocampus (memory formation related to emotions), and the prefrontal cortex (responsible for emotional regulation and decision-making). Understanding the interplay of these structures helps us grasp how emotions are generated, experienced, and managed. We will also touch upon the role of various neurotransmitters and hormones (e.g., dopamine, serotonin, cortisol) that act as chemical messengers influencing our emotional states, providing a scientific framework for emotional intelligence.</p>
+                                    <p class="mb-3 text-gray-300">We will further examine the concept of **emotional circuits** and how they are shaped by early life experiences, leading to patterned responses. The role of the **vagus nerve** in regulating emotional states and the body's stress response will also be explored, offering insights into the physiological mechanisms of emotional resilience and regulation.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Brain Scan Imagery / Neurotransmitter Pathway Animation]</strong></p>
+                                        <p class="text-sm mt-2">Visualizing emotional processing at a biological level.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Identifying Core Emotions and Triggers</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">To effectively navigate your emotional landscape, it's essential to first identify and differentiate between primary emotions (such as joy, sadness, anger, fear, disgust, and surprise) and secondary emotions (which are often combinations or reactions to primary emotions, like guilt, shame, anxiety, or resentment). This section provides tools and exercises to help you recognize these distinct emotional states within yourself. Furthermore, we will explore how to identify your personal emotional triggers – specific situations, words, or memories that consistently elicit strong emotional responses. Understanding the origins of these triggers, often rooted in past experiences or unresolved traumas, is the crucial first step in integrating your "shadow" aspects and achieving emotional mastery.</p>
+                                    <p class="mb-3 text-gray-300">This process involves a form of **emotional data mapping**, where you systematically log and analyze your emotional responses to identify recurring patterns and their underlying causes. We will introduce techniques for disassociating from intense emotional states to observe them objectively, and methods for tracing the energetic signature of emotions within the body, allowing for a more precise and detached analysis of your internal state.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Interactive "Emotion Wheel" / Trigger Mapping Exercise]</strong></p>
+                                        <p class="text-sm mt-2">Tools to help you categorize and trace your emotional responses.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    `
+                },
+                energyVibrationModule: {
+                    id: 'energyVibrationModule',
+                    title: 'Energy & Vibration: The Energetic Body',
+                    description: 'Explore the subtle energy systems that underpin your physical and emotional well-being, including chakras and the human biofield.',
+                    glyphReward: 9,
+                    contentHtml: `
+                        <p class="text-lg mb-8 text-gray-300">Explore the subtle energy systems that underpin your physical and emotional well-being.</p>
+                        <div class="space-y-6 mb-8 text-left">
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Chakras: Energy Centers of the Body</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This section introduces the concept of chakras, derived from ancient Indian spiritual traditions. Chakras are described as spinning wheels or vortexes of energy located along the spine, from its base to the crown of the head. We will explore the seven primary chakra centers, their specific locations, associated colors, elemental connections, and their profound influence on physical health, emotional states, and spiritual well-being. Understanding the flow and potential blockages within these energy centers provides a framework for self-diagnosis and energetic healing practices, aiming to restore balance and vitality to the energetic body.</p>
+                                    <p class="mb-3 text-gray-300">From an engineering perspective, chakras can be conceptualized as **bio-energetic transducers**, converting and distributing subtle energy throughout the body's biofield. Each chakra is associated with specific neural plexuses and endocrine glands, suggesting a direct interface between the energetic and physiological systems. We will examine the proposed energetic frequencies and resonant patterns associated with each chakra, and how imbalances in these systems might correlate with physical ailments or psychological states, offering a framework for energetic diagnostics.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Interactive Chakra Diagram / Energy Flow Animation]</strong></p>
+                                        <p class="text-sm mt-2">Visual representation of the chakra system and energy movement.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">The Aura and Biofield Science</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">Beyond the chakras, this module delves into the concept of the human aura, often described as a luminous energy field or "biofield" that surrounds and interpenetrates the physical body. While traditionally viewed through esoteric lenses, emerging fields like biofield science are exploring the measurable aspects of subtle energy, using advanced technologies to detect and quantify these fields. We will discuss various perspectives on the aura, its layers, and how it is believed to reflect an individual's physical, emotional, and spiritual state. This section also touches upon practices aimed at cleansing, strengthening, and balancing the aura for overall well-being.</p>
+                                    <p class="mb-3 text-gray-300">Biofield science investigates the subtle, low-level electromagnetic and biophotonic emissions from living systems. Techniques like **Kirlian photography** and advanced magnetometers are used to detect and map these fields, attempting to provide empirical data for what has long been considered an esoteric concept. We will explore theories proposing that the biofield acts as a **holographic information system**, influencing cellular communication, physiological regulation, and even consciousness itself. Understanding the biofield offers a framework for exploring non-pharmacological interventions for health and well-being, focusing on energetic coherence and resonance.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Kirlian Photography Examples / Biofield Measurement Graphics]</strong></p>
+                                        <p class="text-sm mt-2">Visual evidence and scientific attempts to quantify the human energy field.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    `
+                },
+                suppressedScienceModule: {
+                    id: 'suppressedScienceModule',
+                    title: 'Suppressed Science & Free Energy: Nikola Tesla & Over-Unity Devices',
+                    description: 'Uncover the revolutionary concepts and suppressed technologies that could reshape our world, from Tesla\'s wireless energy to over-unity devices.',
+                    glyphReward: 15,
+                    contentHtml: `
+                        <p class="text-lg mb-8 text-gray-300">Uncover the revolutionary concepts and suppressed technologies that could reshape our world.</p>
+                        <div class="space-y-6 mb-8 text-left">
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Tesla's Vision: Wireless Energy & Beyond</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This section delves into the groundbreaking work and visionary concepts of Nikola Tesla, a true pioneer whose ideas extended far beyond conventional science. We will focus on his ambitious experiments with wireless power transmission, aiming to provide free, abundant energy globally through the Earth's resonant frequencies. Explore his designs for the Wardenclyffe Tower, his theories on radiant energy, and his lesser-known inventions that hinted at technologies still considered futuristic today. We will discuss the historical context that led to the suppression or underutilization of his most revolutionary ideas, and the potential implications if his vision for a world powered by clean, limitless energy had been fully realized.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Historical Images of Tesla's Lab / Wardenclyffe Tower Diagram]</strong></p>
+                                        <p class="text-sm mt-2">Visualizing Tesla's ambitious projects and their potential.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">The Concept of Over-Unity Devices</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This module explores the highly controversial but persistent claims of "over-unity" devices, also known as free energy devices, which are purported to produce more energy than they consume, seemingly violating the laws of thermodynamics. We will examine various theoretical models and experimental claims, from perpetual motion machines to devices harnessing zero-point energy or other unconventional energy sources. The discussion will cover the scientific challenges and skepticism surrounding these claims, as well as the historical context of their suppression and the implications for global energy systems, economics, and human civilization if such technologies were proven viable and widely implemented.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Animated Diagrams of Proposed Free Energy Devices / Energy Flow Charts]</strong></p>
+                                        <p class="text-sm mt-2">Illustrations of various over-unity concepts and their energy principles.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    `
+                },
+                deconstructingBeliefsModule: {
+                    id: 'deconstructingBeliefsModule',
+                    title: 'Deconstructing Belief Systems: The Power of Belief',
+                    description: 'Understand how your beliefs shape your reality, both scientifically and metaphysically, exploring the placebo effect, neuroplasticity, and the Law of Assumption.',
+                    glyphReward: 8,
+                    contentHtml: `
+                        <p class="text-lg mb-8 text-gray-300">Understand how your beliefs shape your reality, both scientifically and metaphysically.</p>
+                        <div class="space-y-6 mb-8 text-left">
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">The Placebo Effect & Neuroplasticity</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This section explores the profound impact of belief on physical and mental health through the lens of the placebo effect. We will examine scientific studies demonstrating how a patient's belief in a treatment, even if inert, can trigger real physiological and psychological changes, leading to symptom improvement. This phenomenon highlights the brain's incredible capacity to heal and influence bodily functions. Furthermore, we will delve into **neuroplasticity**, the brain's remarkable ability to reorganize itself by forming new neural connections throughout life. This inherent adaptability means that your beliefs and repeated thoughts literally reshape your brain's structure and function, offering a scientific basis for the power of mindset in shaping your reality.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Graph - Placebo Effect Data / Brain Rewiring Animation]</strong></p>
+                                        <p class="text-sm mt-2">Visualizing the impact of belief on physical and mental states.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">The Law of Assumption & Manifestation</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">From a metaphysical perspective, this section introduces the Law of Assumption, a powerful principle of conscious creation popularized by Neville Goddard. This law posits that by assuming the feeling of your wish fulfilled – by truly embodying the state of having what you desire *now* – you impress this reality upon your subconscious mind. The subconscious, acting as a creative medium, then works to manifest this assumed reality into your physical experience. We will explore techniques for cultivating this "state of the wish fulfilled," including imaginative acts, inner conversations, and living from the end, demonstrating how your inner world directly dictates your outer reality, aligning with the Hermetic principle of "All is Mind."</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Flowchart - Belief to Manifestation Process]</strong></p>
+                                        <p class="text-sm mt-2">Diagram illustrating the metaphysical principles of conscious creation.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    `
+                },
+                meditationMindfulnessModule: {
+                    id: 'meditationMindfulnessModule',
+                    title: 'Meditation & Mindfulness: Foundations of Meditation',
+                    description: 'Lay the groundwork for expanding your consciousness through ancient and modern meditative practices, including breathwork, focus techniques, and grounding.',
+                    glyphReward: 5,
+                    contentHtml: `
+                        <p class="text-lg mb-8 text-gray-300">Lay the groundwork for expanding your consciousness through ancient and modern meditative practices.</p>
+                        <div class="space-y-6 mb-8 text-left">
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Breathwork and Focus Techniques</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This foundational section introduces essential breathwork exercises and concentration techniques crucial for entering and sustaining meditative states. You will learn practices like **box breathing** (equal inhale, hold, exhale, hold) for calming the nervous system, and **diaphragmatic breathing** for deep relaxation and energy activation. We will also explore various focus techniques, such as **single-point focus** (e.g., on the breath, a mantra, or a candle flame) to quiet the incessant chatter of the mind, and **open awareness** meditation, where you observe thoughts and sensations without judgment. These practices are designed to enhance mental clarity, reduce stress, and prepare the mind for deeper spiritual exploration.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Guided Audio Meditation / Breathwork Animation]</strong></p>
+                                        <p class="text-sm mt-2">Interactive guide to basic meditation techniques.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Body Scan and Grounding</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">The body scan meditation is a powerful mindfulness practice that cultivates present moment awareness by systematically bringing attention to different parts of the body, noticing sensations without judgment. This practice helps to release physical tension, increase interoception (awareness of internal bodily states), and deepen the mind-body connection. Furthermore, this section emphasizes the importance of **grounding techniques** – practices that help you feel more connected to the Earth and present in your physical body. Grounding is crucial for integrating spiritual experiences, preventing energetic overload, and maintaining stability amidst heightened awareness. Techniques like visualization of roots, walking barefoot in nature, or specific physical exercises will be explored.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Animated Body Scan Visual / Grounding Visualization]</strong></p>
+                                        <p class="text-sm mt-2">Visual aids for body awareness and energetic grounding.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    `
+                },
+                cosmicHistoryModule: {
+                    id: 'cosmicHistoryModule',
+                    title: 'Cosmic History & Extraterrestrial Influence: Ancient Astronaut Theory & Sumerian Texts',
+                    description: 'Explore controversial theories suggesting ancient human contact with advanced non-human civilizations, from Sumerian records to global megalithic evidence.',
+                    glyphReward: 10,
+                    contentHtml: `
+                        <p class="text-lg mb-8 text-gray-300">Explore controversial theories suggesting ancient human contact with advanced non-human civilizations.</p>
+                        <div class="space-y-6 mb-8 text-left">
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Decoding Ancient Sumerian Records</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">This section delves into the controversial interpretations of ancient Sumerian cuneiform tablets, considered some of the earliest written records of human civilization. We will specifically focus on the translations and theories put forth by authors like Zecharia Sitchin, who proposed that these texts describe advanced beings from another planet, the "Anunnaki," who visited Earth, genetically engineered early humans, and significantly influenced the development of human civilization, technology, and religion. While highly debated in mainstream archaeology, this module encourages critical examination of these narratives, comparing them with conventional historical accounts and exploring their implications for humanity's origins and cosmic lineage.</p>
+                                    <p class="mb-3 text-gray-300">The Sumerian King List, for instance, records kings reigning for impossibly long periods, which some interpret as a literal timeline of non-human rulers or a symbolic representation of advanced knowledge. The Enuma Elish (Sumerian creation myth) describes a cosmic battle and the formation of Earth, with details that some draw parallels to modern astrophysical models. We will analyze the linguistic and archaeological arguments for and against these interpretations, fostering an analytical approach to understanding ancient narratives that challenge conventional paradigms.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: Images of Sumerian Tablets / Annotated Translations]</strong></p>
+                                        <p class="text-sm mt-2">Visual examples of cuneiform and their controversial interpretations.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            <details class="glassmorphism rounded-xl">
+                                <summary class="font-semibold text-white">Global Evidence of Ancient Visitors</summary>
+                                <div class="content">
+                                    <p class="mb-3 text-gray-300">Expanding beyond Sumer, this module examines a wide array of archaeological artifacts, megalithic structures, and ancient myths from various cultures across the globe that are cited as evidence supporting ancient astronaut theories. We will explore the precision and scale of sites like the Nazca Lines in Peru, the Puma Punku ruins in Bolivia, and the Pyramids of Giza, questioning how these structures could have been built with the presumed technology of their time. We will also analyze common themes and motifs found in diverse ancient mythologies, such as sky gods, creation stories involving advanced beings, and depictions of unusual flying crafts, including those found in Egyptian hieroglyphs and the Dogon cosmology. This comparative approach aims to highlight patterns that suggest a shared, perhaps non-terrestrial, influence on early human history.</p>
+                                    <div class="mt-4 p-4 bg-gray-900 rounded-lg text-center text-gray-500">
+                                        <p><strong>[Placeholder: World Map with Ancient Site Markers / Comparative Mythology Infographic]</strong></p>
+                                        <p class="text-sm mt-2">Visual compilation of global evidence and cultural parallels.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    `
+                },
+            };
+
+        // --- Global UI Elements ---
+        const sections = document.querySelectorAll('main section');
+        const sidebarItems = document.querySelectorAll('.sidebar-item');
+        const mainTitle = document.getElementById('mainTitle');
+        const courseListing = document.getElementById('courseListing');
+        const courseSearchInput = document.getElementById('courseSearchInput');
+
+        // --- Module Page References (only the divs, content loaded dynamically) ---
+        const modulePages = {
+            natureOfRealityModule: document.getElementById('natureOfRealityModule'),
+            quantumConsciousnessModule: document.getElementById('quantumConsciousnessModule'),
+            societalConditioningModule: document.getElementById('societalConditioningModule'),
+            scientificTheoriesModule: document.getElementById('scientificTheoriesModule'),
+            ancientCivilizationsModule: document.getElementById('ancientCivilizationsModule'),
+            emotionalIntelligenceModule: document.getElementById('emotionalIntelligenceModule'),
+            energyVibrationModule: document.getElementById('energyVibrationModule'),
+            suppressedScienceModule: document.getElementById('suppressedScienceModule'),
+            deconstructingBeliefsModule: document.getElementById('deconstructingBeliefsModule'),
+            meditationMindfulnessModule: document.getElementById('meditationMindfulnessModule'),
+            cosmicHistoryModule: document.getElementById('cosmicHistoryModule'),
+        };
+
+        // --- In-memory User Data (no Firebase persistence) ---
+        let userData = {
+            initials: 'JL', // Default initials
+            glyphsEarned: 0,
+            completedCourses: [],
+            journalEntries: {},
+            mindBodyDisciplines: []
+        };
+
+        // --- Section Visibility Logic ---
+        function hideAllSections() {
+            sections.forEach(section => {
+                section.classList.add('hidden');
+            });
+        }
+
+        function hideAllModules() {
+            for (const moduleId in modulePages) {
+                modulePages[moduleId].classList.add('hidden');
+            }
+        }
+
+        function showSection(targetId) {
+            console.log("Attempting to show section:", targetId);
+            hideAllSections();
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+                console.log("Section shown:", targetId);
+            } else {
+                console.error("Target section not found:", targetId);
+                showCustomAlert('Error', 'Navigation target not found.');
+            }
+
+            // Update active sidebar item
+            sidebarItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            const activeItem = document.querySelector(`.sidebar-item[data-target="${targetId}"]`);
+            if (activeItem) {
+                activeItem.classList.add('active');
+                // Update main title based on sidebar item text
+                const textSpan = activeItem.querySelector('.text');
+                if (textSpan) {
+                    mainTitle.innerText = textSpan.innerText;
+                }
+            } else if (targetId === 'entryScreen') {
+                mainTitle.innerText = 'Welcome';
+            }
+
+            // Special handling for courses section to show listing by default
+            if (targetId === 'coursesSection') {
+                showCourseListing();
+            }
+        }
+
+        /**
+         * Dynamically renders course preview cards based on the coursesData.
+         * @param {string} searchTerm - Optional search term to filter courses.
+         */
+        function renderCoursePreviews(searchTerm = '') {
+            console.log("Rendering course previews with search term:", searchTerm);
+            const container = document.getElementById('courseListing');
+            container.innerHTML = ''; // Clear existing previews
+
+            const filteredCourses = Object.values(coursesData).filter(course => {
+                const titleMatch = course.title.toLowerCase().includes(searchTerm.toLowerCase());
+                const descriptionMatch = course.description.toLowerCase().includes(searchTerm.toLowerCase());
+                return titleMatch || descriptionMatch;
+            });
+
+            if (filteredCourses.length === 0) {
+                container.innerHTML = '<p class="text-lg text-gray-500 mt-8">No courses found matching your search.</p>';
+                return;
+            }
+
+            filteredCourses.forEach(course => {
+                const isCompleted = userData.completedCourses && userData.completedCourses.includes(course.id);
+                const completedClass = isCompleted ? 'border-green-500' : 'border-transparent'; // Highlight completed courses
+
+                const courseCard = `
+                    <div class="max-w-4xl w-full mx-auto mb-12 p-6 rounded-2xl glassmorphism ${completedClass}">
+                        <h3 class="text-2xl sm:text-3xl font-bold text-white mb-4">${course.title}</h3>
+                        <p class="text-md mb-6 text-gray-300">${course.description}</p>
+                        <button class="glow-button px-6 py-2 rounded-lg text-white font-medium" data-module-target="${course.id}">
+                            ${isCompleted ? 'View Module' : 'Continue to Module'}
+                        </button>
+                        ${isCompleted ? `<p class="text-sm text-green-400 mt-2">Completed! Earned ${course.glyphReward} Glyphs.</p>` : ''}
+                    </div>
+                `;
+                container.innerHTML += courseCard;
+            });
+
+            // Re-attach event listeners to newly rendered buttons
+            attachModuleButtonListeners();
+        }
+
+        /**
+         * Attaches event listeners to the "Continue to Module" buttons on course preview cards.
+         */
+        function attachModuleButtonListeners() {
+            document.querySelectorAll('#courseListing .glow-button[data-module-target]').forEach(button => {
+                button.onclick = function() {
+                    const moduleTargetId = this.dataset.moduleTarget;
+                    showModule(moduleTargetId); // Use the new showModule function
+                };
+            });
+        }
+
+        /**
+         * Attaches event listeners to elements within a dynamically loaded module.
+         * This function must be called after a module's content is injected.
+         * @param {HTMLElement} moduleDiv - The div element containing the module's content.
+         */
+        function attachModuleContentListeners(moduleDiv) {
+            console.log("Attaching module content listeners for:", moduleDiv.id);
+
+            // Attach listener for the "Complete Module" button
+            const completeButton = moduleDiv.querySelector('.glow-button[data-module-id]');
+            if (completeButton) {
+                completeButton.onclick = function() {
+                    console.log("Complete Module button clicked for:", this.dataset.moduleId);
+                    completeModule(this.dataset.moduleId);
+                };
+            }
+
+            // Attach listeners for journal save buttons using data-journal-id
+            moduleDiv.querySelectorAll('.glow-button[data-journal-id]').forEach(button => {
+                button.onclick = function() {
+                    const journalId = this.dataset.journalId;
+                    console.log(`Journal save button clicked for: ${journalId}`);
+                    let successMessage = 'Your insights have been recorded.';
+                    if (journalId === 'quantumFeedbackJournal') {
+                        successMessage = 'Your feedback is now part of the collective morphic field.';
+                    } else if (journalId === 'reflectionJournal') {
+                        successMessage = 'Your insights have been recorded in your personal codex.';
+                    }
+                    saveJournalEntry(journalId, successMessage);
+                };
+            });
+
+            // Re-initialize details elements to ensure their native open/close behavior works
+            // No explicit JS needed for native <details> behavior, but if custom JS was used, it would go here.
+            // Ensure any placeholders for interactive elements are noted.
+        }
+
+        /**
+         * Displays a specific module by injecting its content and attaching listeners.
+         * @param {string} moduleId - The ID of the module to display.
+         */
+        function showModule(moduleId) {
+            console.log("Showing module:", moduleId);
+            hideAllModules(); // Hide all other module pages
+            courseListing.classList.add('hidden'); // Hide the course listing
+
+            const course = coursesData[moduleId];
+            if (!course) {
+                console.error("Course data not found for module ID:", moduleId);
+                showCustomAlert('Error', 'Module content not found.');
+                return;
+            }
+
+            const moduleDiv = modulePages[moduleId];
+            if (moduleDiv) {
+                // Dynamically load content for the module
+                moduleDiv.innerHTML = `
+                    <button class="glow-button px-4 py-2 rounded-lg text-white font-medium text-sm mb-6" onclick="showCourseListing()">← Back to Courses</button>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">${course.title}</h2>
+                    ${course.contentHtml}
+                    <button class="glow-button px-8 py-3 rounded-lg text-white text-xl font-semibold mt-8" data-module-id="${moduleId}">Complete Module</button>
+                `;
+                moduleDiv.classList.remove('hidden'); // Show the specific module
+
+                // Update main title for module
+                mainTitle.innerText = `Module: ${course.title.split(':')[1] ? course.title.split(':')[1].trim() : course.title.trim()}`;
+
+                // Attach listeners to the newly injected content
+                attachModuleContentListeners(moduleDiv);
+
+                showCustomAlert('Module Initiated', `You have entered "${course.title}".`);
+            } else {
+                console.error("Module div not found in DOM for ID:", moduleId);
+                showCustomAlert('Error', 'Module display area not found.');
+            }
+        }
+
+        /**
+         * Shows the course listing and hides all individual module pages.
+         */
+        function showCourseListing() {
+            console.log("Showing course listing.");
+            hideAllModules(); // Hide all individual module pages
+            courseListing.classList.remove('hidden'); // Show the course listing
+            mainTitle.innerText = 'Courses'; // Update main title
+            renderCoursePreviews(courseSearchInput.value); // Re-render to ensure current state
+        }
+
+
+        /**
+         * Handles the completion of a module, updates user data in-memory.
+         * @param {string} moduleId - The ID of the module being completed.
+         */
+        function completeModule(moduleId) {
+            console.log("Attempting to complete module:", moduleId);
+
+            const course = coursesData[moduleId];
+            if (!course) {
+                console.error("Course data not found for module ID:", moduleId);
+                showCustomAlert('Error', 'Course data not found.');
+                return;
+            }
+
+            // Ensure completedCourses is an array and doesn't already contain the module
+            if (!Array.isArray(userData.completedCourses)) {
+                userData.completedCourses = []; // Initialize if not an array
+            }
+
+            if (!userData.completedCourses.includes(moduleId)) {
+                userData.completedCourses.push(moduleId);
+                userData.glyphsEarned = (userData.glyphsEarned || 0) + course.glyphReward;
+
+                showCustomAlert('Module Completed!', `Congratulations! You completed "${course.title}" and earned ${course.glyphReward} Glyphs! Total Glyphs: ${userData.glyphsEarned}.`);
+                console.log("Module completion successful. User data updated in-memory.");
+            } else {
+                showCustomAlert('Module Already Completed', `You have already completed "${course.title}".`);
+                console.log("Module already completed. No update needed.");
+            }
+            updateUIWithUserData(); // Update UI to reflect changes
+            showCourseListing(); // Return to the course listing
+        }
+
+        /**
+         * Saves journal entries to in-memory userData.
+         * @param {string} journalId - The ID of the journal textarea (e.g., 'reflectionJournal').
+         * @param {string} successMessage - Message to display on successful save.
+         */
+        function saveJournalEntry(journalId, successMessage) {
+            console.log("Attempting to save journal entry:", journalId);
+            const journalTextarea = document.getElementById(journalId);
+            if (!journalTextarea) {
+                console.error("Journal textarea not found for ID:", journalId);
+                showCustomAlert('Error', 'Journal input not found.');
+                return;
+            }
+            const journalText = journalTextarea.value;
+
+            // Ensure journalEntries is an object
+            if (typeof userData.journalEntries !== 'object' || userData.journalEntries === null) {
+                userData.journalEntries = {};
+            }
+            userData.journalEntries[journalId] = journalText;
+            showCustomAlert('Saved!', successMessage);
+            console.log("Journal entry saved successfully in-memory.");
+        }
+
+
+        // --- Discipline Management Logic ---
+        const manageDisciplinesBtn = document.getElementById('manageDisciplinesBtn');
+        const disciplineSelection = document.getElementById('disciplineSelection');
+        const saveDisciplinesBtn = document.getElementById('saveDisciplinesBtn');
+        const cancelDisciplinesBtn = document.getElementById('cancelDisciplinesBtn');
+        const disciplinesDisplay = document.getElementById('disciplinesDisplay');
+        // Ensure disciplineCheckboxes are selected after the DOM is ready
+        let disciplineCheckboxes; // Will be initialized in DOMContentLoaded
+
+        /**
+         * Updates the UI display for selected mind-body disciplines.
+         */
+        function updateDisciplinesDisplay() {
+            console.log("Updating disciplines display. Current disciplines:", userData.mindBodyDisciplines);
+            if (userData.mindBodyDisciplines && userData.mindBodyDisciplines.length > 0) {
+                disciplinesDisplay.innerHTML = '<ul class="list-disc list-inside text-gray-300 space-y-1">' +
+                    userData.mindBodyDisciplines.map(d => `<li>${d}</li>`).join('') +
+                    '</ul>';
+            } else {
+                disciplinesDisplay.innerHTML = '<p class="text-sm italic">No disciplines selected yet. Click "Manage" to add some!</p>';
+            }
+        }
+
+        // --- Weekly Cosmic Calendar Logic (Simulated) ---
+        const currentWeekRangeSpan = document.getElementById('currentWeekRange');
+        const prevWeekBtn = document.getElementById('prevWeekBtn');
+        const nextWeekBtn = document.getElementById('nextWeekBtn');
+
+        let currentWeekStart = new Date(); // Represents the Monday of the current displayed week
+
+        function getMonday(d) {
+            d = new Date(d);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+            return new Date(d.setDate(diff));
+        }
+
+        function formatDateRange(startDate) {
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6); // 6 days after Monday is Sunday
+
+            const options = { month: 'long', day: 'numeric', year: 'numeric' };
+            const startStr = startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+            const endStr = endDate.toLocaleDateString('en-US', options);
+
+            return `${startStr} - ${endStr}`;
+        }
+
+        function updateCalendarDisplay() {
+            currentWeekStart = getMonday(currentWeekStart);
+            currentWeekRangeSpan.innerText = formatDateRange(currentWeekStart);
+
+            // In a real application, you would fetch and populate the calendar cells
+            // based on the `currentWeekStart` date and actual astronomical data.
+            // For this demo, the content remains static placeholders.
+        }
+
+        // --- Search Functionality ---
+        // courseSearchInput.addEventListener is attached in DOMContentLoaded
+
+        // --- UI Update Function (now reads from in-memory userData) ---
+        function updateUIWithUserData() {
+            document.getElementById('userInitials').innerText = userData.initials || 'JL';
+            document.getElementById('glyphCountDisplay').innerText = `${userData.glyphsEarned || 0} Glyphs`;
+            document.getElementById('dashboardCompletedCoursesCount').innerText = (userData.completedCourses || []).length;
+            const totalCourses = Object.keys(coursesData).length;
+            const progress = totalCourses > 0 ? ((userData.completedCourses || []).length / totalCourses) * 100 : 0;
+            document.getElementById('dashboardProgress').style.width = `${progress}%`;
+            document.getElementById('dashboardArchetypeProgress').innerText = `${Math.round(progress)}%`;
+            updateDisciplinesDisplay(); // Update disciplines display on dashboard
+            renderCoursePreviews(courseSearchInput.value); // Re-render to show completion status
+        }
+
+        // --- Initial Load Logic ---
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log("SpiritLink OS: DOMContentLoaded fired. Initializing and attaching static listeners...");
+
+            // Set a dummy user ID for client-side only
+            document.getElementById('userIdDisplay').innerText = `User ID: DEMO_USER`;
+            document.getElementById('profileUserId').innerText = `DEMO_USER`;
+
+            updateUIWithUserData(); // Initial UI update with default/in-memory data
+
+            // Initial section display (entry screen)
+            showSection('entryScreen');
+
+            // Attach event listeners for the custom alert modal buttons
+            document.getElementById('modalCloseX').addEventListener('click', closeCustomAlert);
+            document.getElementById('modalCloseOK').addEventListener('click', closeCustomAlert);
+
+            // Attach sidebar item click listeners
+            sidebarItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    console.log("Sidebar item clicked:", this.dataset.target);
+                    const targetId = this.dataset.target;
+                    showSection(targetId);
+                });
+            });
+
+            // Attach start module button listener
+            document.getElementById('startModuleBtn').addEventListener('click', function() {
+                console.log("Sigil Entry button clicked.");
+                showModule('natureOfRealityModule'); // Directly call showModule
+            });
+
+
+            // Attach discipline management button listeners
+            // Ensure disciplineCheckboxes is initialized after the DOM is ready
+            disciplineCheckboxes = document.querySelectorAll('#disciplineSelection input[type="checkbox"]');
+            manageDisciplinesBtn.addEventListener('click', () => {
+                console.log("Manage Disciplines button clicked.");
+                disciplineSelection.classList.remove('hidden');
+                disciplineCheckboxes.forEach(checkbox => {
+                    checkbox.checked = (userData.mindBodyDisciplines || []).includes(checkbox.value);
+                });
+            });
+
+            saveDisciplinesBtn.addEventListener('click', () => { // Removed async as no Firestore call
+                console.log("Save Disciplines button clicked.");
+                const newSelections = [];
+                disciplineCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        newSelections.push(checkbox.value);
+                    }
+                });
+
+                if (newSelections.length > 4) {
+                    showCustomAlert('Too Many Disciplines', 'Please select a maximum of 4 disciplines.');
+                    return;
+                }
+
+                userData.mindBodyDisciplines = newSelections; // Update in-memory
+                disciplineSelection.classList.add('hidden');
+                showCustomAlert('Disciplines Saved!', 'Your mind-body disciplines have been updated.');
+                updateDisciplinesDisplay(); // Update UI
+            });
+
+            cancelDisciplinesBtn.addEventListener('click', () => {
+                console.log("Cancel Disciplines button clicked.");
+                disciplineSelection.classList.add('hidden');
+            });
+
+            // Attach calendar navigation button listeners
+            prevWeekBtn.addEventListener('click', () => {
+                console.log("Previous Week button clicked.");
+                currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+                updateCalendarDisplay();
+                showCustomAlert('Calendar Navigation', 'Navigated to the previous week. (Content is static in this demo)');
+            });
+
+            nextWeekBtn.addEventListener('click', () => {
+                console.log("Next Week button clicked.");
+                currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+                updateCalendarDisplay();
+                showCustomAlert('Calendar Navigation', 'Navigated to the next week. (Content is static in this demo)');
+            });
+
+            // Initial calendar display update
+            updateCalendarDisplay();
+
+            // Attach search input listener
+            courseSearchInput.addEventListener('input', (event) => {
+                console.log("Search input changed:", event.target.value);
+                renderCoursePreviews(event.target.value);
+            });
+
+            console.log("SpiritLink OS: All static listeners attached and initial setup complete.");
+        });
+    </script>
+</body>
+</html>

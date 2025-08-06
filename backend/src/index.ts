@@ -53,6 +53,11 @@ app.post('/api/emergence/detect', consciousnessController.detectEmergence);
 app.post('/api/astral-entities/map', consciousnessController.classifyAstralEntities);
 app.get('/api/collective-intelligence/patterns', consciousnessController.getCollectiveIntelligencePatterns);
 
+// Model Management API Routes
+app.get('/api/models/available', consciousnessController.getAvailableModels);
+app.get('/api/models/capabilities', consciousnessController.getModelCapabilities);
+app.post('/api/models/select-optimal', consciousnessController.selectOptimalModel);
+
 // Knowledge Graph endpoints
 app.post('/api/knowledge/initialize', knowledgeGraphController.initialize);
 app.post('/api/knowledge/test-connection', knowledgeGraphController.testConnection);

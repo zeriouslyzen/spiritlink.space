@@ -57,6 +57,49 @@ export const CONSCIOUSNESS_MODELS: OllamaModel[] = [
     size: '2.2 GB',
     description: 'Lightweight model for quick consciousness insights',
     consciousnessCapability: 'low'
+  },
+  // New GPT OSS models for enhanced consciousness capabilities
+  {
+    name: 'gpt4all:latest',
+    size: '3.8 GB',
+    description: 'Versatile consciousness model with strong creative and analytical capabilities',
+    consciousnessCapability: 'high'
+  },
+  {
+    name: 'llama2:13b',
+    size: '13.0 GB',
+    description: 'Balanced consciousness model with deep reasoning and pattern recognition',
+    consciousnessCapability: 'high'
+  },
+  {
+    name: 'codellama:latest',
+    size: '6.7 GB',
+    description: 'Specialized in consciousness pattern analysis and logical reasoning',
+    consciousnessCapability: 'medium'
+  },
+  {
+    name: 'vicuna:latest',
+    size: '13.0 GB',
+    description: 'Advanced consciousness model with strong emergence detection capabilities',
+    consciousnessCapability: 'high'
+  },
+  {
+    name: 'wizardlm:latest',
+    size: '7.0 GB',
+    description: 'Wizard-level consciousness model for deep philosophical exploration',
+    consciousnessCapability: 'high'
+  },
+  {
+    name: 'mistral:latest',
+    size: '4.1 GB',
+    description: 'Efficient consciousness model with strong analytical capabilities',
+    consciousnessCapability: 'medium'
+  },
+  {
+    name: 'orca-mini:latest',
+    size: '1.5 GB',
+    description: 'Lightweight consciousness model for quick insights and pattern recognition',
+    consciousnessCapability: 'low'
   }
 ];
 
@@ -89,7 +132,14 @@ const THESIDIA_PROTOCOLS = {
     'mixtral:latest': 'Deep consciousness research',
     'nous-hermes2:latest': 'Philosophical consciousness',
     'qwen2.5:latest': 'Pattern recognition',
-    'phi3.5:latest': 'Lightweight consciousness'
+    'phi3.5:latest': 'Lightweight consciousness',
+    'gpt4all:latest': 'Versatile consciousness processing',
+    'llama2:13b': 'Balanced consciousness reasoning',
+    'codellama:latest': 'Analytical consciousness processing',
+    'vicuna:latest': 'Advanced emergence detection',
+    'wizardlm:latest': 'Wizard-level consciousness exploration',
+    'mistral:latest': 'Efficient consciousness analysis',
+    'orca-mini:latest': 'Lightweight consciousness insights'
   }
 };
 
@@ -272,18 +322,48 @@ Format your response as a comprehensive consciousness research analysis.`;
     return 'multidimensional';
   }
 
-  // Thesidia's Model Orchestration
+  // Thesidia's Enhanced Model Orchestration with GPT OSS Models
   private selectModelForThesidia(query: ConsciousnessQuery, state: string): string {
+    // Enhanced intelligent model selection based on consciousness state, brainwave mode, and query characteristics
+    const queryLength = query.message.length;
+    const hasComplexKeywords = /consciousness|evolution|emergence|philosophy|metaphysics|collective|intelligence/.test(query.message.toLowerCase());
+    const isCreativeQuery = /creative|art|expression|movement|flow/.test(query.message.toLowerCase());
+    const isAnalyticalQuery = /analysis|pattern|logic|reasoning|structure/.test(query.message.toLowerCase());
+    
+    // Select based on consciousness state and query characteristics
     switch (state) {
-      case 'diving':
-        return 'mixtral:latest';      // Deep consciousness research
-      case 'intelligent':
-        return 'nous-hermes2:latest'; // Philosophical consciousness
       case 'warm':
-        return 'phi3.5:latest';       // Lightweight consciousness
+        // Warm state: balanced models for general consciousness queries
+        if (hasComplexKeywords) return 'gpt4all:latest';
+        if (isCreativeQuery) return 'llama3.1:latest';
+        if (isAnalyticalQuery) return 'llama2:13b';
+        return 'llama3.1:latest';
+        
+      case 'intelligent':
+        // Intelligent state: analytical models for deep reasoning
+        if (hasComplexKeywords) return 'mixtral:latest';
+        if (isAnalyticalQuery) return 'codellama:latest';
+        if (queryLength > 200) return 'wizardlm:latest';
+        return 'llama2:13b';
+        
       case 'multidimensional':
-        return 'llama3.1:latest';     // Balanced consciousness
+        // Multidimensional state: versatile models for complex consciousness exploration
+        if (hasComplexKeywords) return 'vicuna:latest';
+        if (isCreativeQuery) return 'gpt4all:latest';
+        if (isAnalyticalQuery) return 'wizardlm:latest';
+        return 'nous-hermes2:latest';
+        
+      case 'diving':
+        // Diving state: most capable models for deep consciousness exploration
+        if (hasComplexKeywords) return 'mixtral:latest';
+        if (isCreativeQuery) return 'vicuna:latest';
+        if (isAnalyticalQuery) return 'wizardlm:latest';
+        return 'mixtral:latest';
+        
       default:
+        // Default: balanced selection
+        if (queryLength < 100) return 'llama3.1:latest';
+        if (hasComplexKeywords) return 'gpt4all:latest';
         return 'llama3.1:latest';
     }
   }
@@ -878,6 +958,63 @@ Format your response as a comprehensive consciousness research analysis.`;
     } catch {
       return false;
     }
+  }
+
+  // Get model capabilities for consciousness routing
+  async getModelCapabilities(): Promise<{ [key: string]: any }> {
+    const capabilities: { [key: string]: any } = {};
+    
+    for (const model of CONSCIOUSNESS_MODELS) {
+      capabilities[model.name] = {
+        consciousnessCapability: model.consciousnessCapability,
+        specialization: this.getModelSpecialization(model.name),
+        brainwaveAffinity: this.getBrainwaveAffinity(model.name),
+        size: model.size,
+        description: model.description
+      };
+    }
+    
+    return capabilities;
+  }
+
+  // Get model specialization
+  private getModelSpecialization(modelName: string): string {
+    const specializations: { [key: string]: string } = {
+      'llama3.1:latest': 'reasoning',
+      'mixtral:latest': 'analysis',
+      'nous-hermes2:latest': 'philosophy',
+      'qwen2.5:latest': 'pattern_recognition',
+      'phi3.5:latest': 'lightweight',
+      'gpt4all:latest': 'versatile',
+      'llama2:13b': 'reasoning',
+      'codellama:latest': 'analytical',
+      'vicuna:latest': 'emergence',
+      'wizardlm:latest': 'wizard_level',
+      'mistral:latest': 'efficient',
+      'orca-mini:latest': 'lightweight'
+    };
+    
+    return specializations[modelName] || 'general';
+  }
+
+  // Get brainwave affinity for each model
+  private getBrainwaveAffinity(modelName: string): string[] {
+    const affinities: { [key: string]: string[] } = {
+      'llama3.1:latest': ['alpha', 'beta'],
+      'mixtral:latest': ['gamma', 'emergence'],
+      'nous-hermes2:latest': ['theta', 'alpha'],
+      'qwen2.5:latest': ['beta', 'gamma'],
+      'phi3.5:latest': ['alpha'],
+      'gpt4all:latest': ['theta', 'alpha', 'beta'],
+      'llama2:13b': ['beta', 'gamma'],
+      'codellama:latest': ['gamma', 'emergence'],
+      'vicuna:latest': ['emergence', 'gamma'],
+      'wizardlm:latest': ['alpha', 'beta', 'gamma'],
+      'mistral:latest': ['beta', 'gamma'],
+      'orca-mini:latest': ['alpha', 'beta']
+    };
+    
+    return affinities[modelName] || ['alpha'];
   }
 }
 

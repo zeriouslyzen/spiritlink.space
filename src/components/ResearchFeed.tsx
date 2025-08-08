@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ResearchFeedProps {
@@ -7,78 +7,37 @@ interface ResearchFeedProps {
 
 interface ResearchEntry {
   id: string;
+  title: string;
   content: string;
   author: string;
   timestamp: string;
-  collectiveImpact: number;
-  breakthrough: boolean;
-  likes: number;
-  shares: number;
-  comments: number;
+  impact: number;
+  category: 'dataset' | 'timeline' | 'movement' | 'realization' | 'pattern' | 'language' | 'study' | 'other';
+  tags: string[];
+  sourceUrl?: string;
+  verified: boolean;
 }
 
-const mockEntries: ResearchEntry[] = [
-  {
-    id: '1',
-    content: 'Just discovered a fascinating correlation between collective meditation practices and global consciousness shifts. The data suggests that synchronized consciousness activities create measurable ripples in the quantum field.',
-    author: 'Dr. Elena Chen',
-    timestamp: '2 hours ago',
-    collectiveImpact: 94,
-    breakthrough: true,
-    likes: 456,
-    shares: 123,
-    comments: 67
-  },
-  {
-    id: '2',
-    content: 'New research on the intersection of movement therapy and consciousness evolution. Movement patterns seem to encode information about our collective evolution trajectory.',
-    author: 'Movement Researcher Kai',
-    timestamp: '4 hours ago',
-    collectiveImpact: 87,
-    breakthrough: false,
-    likes: 234,
-    shares: 89,
-    comments: 34
-  },
-  {
-    id: '3',
-    content: 'Breakthrough: Collective consciousness appears to operate on a quantum level. When enough minds focus on the same intention, reality itself begins to shift.',
-    author: 'Quantum Consciousness Lab',
-    timestamp: '6 hours ago',
-    collectiveImpact: 98,
-    breakthrough: true,
-    likes: 1247,
-    shares: 456,
-    comments: 234
-  },
-  {
-    id: '4',
-    content: 'Exploring the relationship between individual consciousness development and collective evolution. Each person\'s growth contributes to the whole.',
-    author: 'Consciousness Evolutionist',
-    timestamp: '8 hours ago',
-    collectiveImpact: 82,
-    breakthrough: false,
-    likes: 189,
-    shares: 67,
-    comments: 23
-  },
-  {
-    id: '5',
-    content: 'Fascinating discovery: Consciousness appears to be non-local. Our thoughts and intentions affect the collective field instantaneously, regardless of physical distance.',
-    author: 'Non-Local Research Team',
-    timestamp: '12 hours ago',
-    collectiveImpact: 96,
-    breakthrough: true,
-    likes: 892,
-    shares: 234,
-    comments: 156
-  }
-];
+const API_BASE = (process.env.REACT_APP_API_BASE || `http://${window.location.hostname}:8000`).replace(/\/$/, '');
 
-export const ResearchFeed: React.FC<ResearchFeedProps> = ({ brainwaveMode }) => {
-  const [entries, setEntries] = useState<ResearchEntry[]>(mockEntries);
+const ResearchFeed: React.FC<ResearchFeedProps> = ({ brainwaveMode }) => {
+  const [entries, setEntries] = useState<ResearchEntry[]>([]);
   const [newEntry, setNewEntry] = useState('');
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState<ResearchEntry['category']>('other');
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [tags, setTags] = useState<string>('');
   const [isPosting, setIsPosting] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/research/entries`);
+        const j = await r.json();
+        if (j?.entries) setEntries(j.entries);
+      } catch {}
+    })();
+  }, []);
 
   const getAnimationSpeed = () => {
     switch (brainwaveMode) {
@@ -92,28 +51,34 @@ export const ResearchFeed: React.FC<ResearchFeedProps> = ({ brainwaveMode }) => 
   };
 
   const handlePost = async () => {
-    if (!newEntry.trim()) return;
+    if (!newEntry.trim() || !title.trim()) return;
     
     setIsPosting(true);
     
-    // Simulate posting delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const newResearchEntry: ResearchEntry = {
-      id: Date.now().toString(),
-      content: newEntry,
-      author: 'You',
-      timestamp: 'Just now',
-      collectiveImpact: Math.floor(Math.random() * 20) + 80,
-      breakthrough: Math.random() > 0.8,
-      likes: 0,
-      shares: 0,
-      comments: 0
-    };
-    
-    setEntries([newResearchEntry, ...entries]);
-    setNewEntry('');
-    setIsPosting(false);
+    try {
+      const resp = await fetch(`${API_BASE}/api/research/entries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          content: newEntry.trim(),
+          author: 'You',
+          impact: Math.floor(Math.random() * 20) + 80,
+          category,
+          tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+          sourceUrl: sourceUrl.trim() || undefined
+        })
+      });
+      const json = await resp.json();
+      if (json?.entry) setEntries([json.entry, ...entries]);
+      setTitle('');
+      setNewEntry('');
+      setCategory('other');
+      setTags('');
+      setSourceUrl('');
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   return (
@@ -135,40 +100,41 @@ export const ResearchFeed: React.FC<ResearchFeedProps> = ({ brainwaveMode }) => 
         <div className="glass-card rounded-2xl p-6 mb-6 flex-shrink-0">
           <motion.div 
             className="space-y-4"
-            animate={{ borderColor: ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.3)', 'rgba(255,255,255,0.1)'] }}
+            animate={{ borderColor: ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.2)', 'rgba(255,255,255,0.1)'] }}
             transition={{ duration: 4, repeat: Infinity }}
           >
-            <div className="flex space-x-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex-shrink-0" />
-              <div className="flex-1">
-                <textarea
-                  value={newEntry}
-                  onChange={(e) => setNewEntry(e.target.value)}
-                  placeholder="Share your consciousness research..."
-                  className="w-full bg-transparent text-white placeholder-gray-500 resize-none outline-none text-lg min-h-[100px]"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '12px',
-                    padding: '12px'
-                  }}
-                />
+            <div className="space-y-3">
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Title (succinct)"
+                className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white placeholder-gray-500"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <select value={category} onChange={(e) => setCategory(e.target.value as any)} className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white">
+                  <option value="dataset">Dataset</option>
+                  <option value="timeline">Timeline</option>
+                  <option value="movement">Movement</option>
+                  <option value="realization">Realization</option>
+                  <option value="pattern">Pattern</option>
+                  <option value="language">Language</option>
+                  <option value="study">Study</option>
+                  <option value="other">Other</option>
+                </select>
+                <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="tags (comma-separated)" className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white placeholder-gray-500" />
+                <input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="source URL (optional)" className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white placeholder-gray-500" />
               </div>
+              <textarea
+                value={newEntry}
+                onChange={(e) => setNewEntry(e.target.value)}
+                placeholder="Abstract / findings / protocol..."
+                className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white placeholder-gray-500 resize-none outline-none min-h-[120px]"
+              />
             </div>
             
             <div className="flex justify-between items-center">
               <div className="flex space-x-2">
-                <span className="text-xs text-gray-400">Collective Impact: {newEntry.length > 0 ? Math.floor(Math.random() * 20) + 80 : 0}%</span>
-                {newEntry.length > 0 && (
-                  <motion.span 
-                    className="text-xs text-green-400"
-                    animate={{ opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    ✨ Potential Breakthrough
-                  </motion.span>
-                )}
+                <span className="text-xs text-gray-400">Draft impact estimate: {newEntry.length > 0 ? Math.floor(Math.random() * 20) + 80 : 0}%</span>
               </div>
               
               <motion.button
@@ -204,71 +170,36 @@ export const ResearchFeed: React.FC<ResearchFeedProps> = ({ brainwaveMode }) => 
                 className="glass-card rounded-2xl p-6"
               >
                 <div className="flex space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex-shrink-0" />
+                  <div className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex-shrink-0" />
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
+                    <div className="flex items-center flex-wrap gap-2 mb-2">
                       <span className="font-semibold text-white">{entry.author}</span>
                       <span className="text-gray-400 text-sm">•</span>
-                      <span className="text-gray-400 text-sm">{entry.timestamp}</span>
-                      {entry.breakthrough && (
-                        <motion.span 
-                          className="text-xs bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-2 py-1 rounded-full font-medium"
-                          animate={{ scale: [1, 1.05, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          🔥 Breakthrough
-                        </motion.span>
+                      <span className="text-gray-400 text-sm">{new Date(entry.timestamp).toLocaleString()}</span>
+                      {entry.verified && (
+                        <span className="text-xs bg-white/10 border border-white/20 text-white px-2 py-0.5 rounded-full">verified</span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-1">{entry.title}</h3>
+                    
+                    <p className="text-white/90 mb-3 leading-relaxed">{entry.content}</p>
+                    <div className="flex items-center flex-wrap gap-2 mb-4">
+                      <span className="text-xs bg-white/5 border border-white/10 text-white px-2 py-0.5 rounded">{entry.category}</span>
+                      {entry.tags?.map((t) => (
+                        <span key={t} className="text-xs bg-white/5 border border-white/10 text-white/90 px-2 py-0.5 rounded">#{t}</span>
+                      ))}
+                      {entry.sourceUrl && (
+                        <a href={entry.sourceUrl} target="_blank" rel="noreferrer" className="text-xs underline text-gray-300">source</a>
                       )}
                     </div>
                     
-                    <p className="text-white mb-4 leading-relaxed">{entry.content}</p>
-                    
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-6 text-sm">
-                        <motion.button 
-                          className="flex items-center space-x-1 text-gray-400 hover:text-white transition-colors"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <span>❤️</span>
-                          <span>{entry.likes}</span>
-                        </motion.button>
-                        
-                        <motion.button 
-                          className="flex items-center space-x-1 text-gray-400 hover:text-white transition-colors"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <span>📤</span>
-                          <span>{entry.shares}</span>
-                        </motion.button>
-                        
-                        <motion.button 
-                          className="flex items-center space-x-1 text-gray-400 hover:text-white transition-colors"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <span>💬</span>
-                          <span>{entry.comments}</span>
-                        </motion.button>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-400">Impact:</span>
-                        <motion.span 
-                          className="text-sm font-semibold"
-                          style={{ 
-                            color: entry.breakthrough ? '#FFD700' : '#4ECDC4'
-                          }}
-                          animate={entry.breakthrough ? { 
-                            scale: [1, 1.1, 1],
-                            opacity: [0.8, 1, 0.8]
-                          } : {}}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          {entry.collectiveImpact}%
-                        </motion.span>
-                      </div>
+                      <div className="text-xs text-gray-400">impact: <span className="text-white font-semibold">{entry.impact}%</span></div>
+                      {entry.verified ? (
+                        <span className="text-xs text-green-400">✓ verification passed</span>
+                      ) : (
+                        <span className="text-xs text-yellow-300">pending verification</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -279,4 +210,6 @@ export const ResearchFeed: React.FC<ResearchFeedProps> = ({ brainwaveMode }) => 
       </div>
     </div>
   );
-}; 
+};
+
+export default ResearchFeed;

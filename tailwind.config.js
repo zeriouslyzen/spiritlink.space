@@ -2,44 +2,51 @@
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
+    "./public/index.html"
   ],
   theme: {
     extend: {
-      colors: {
-        black: '#000000',
-        white: '#ffffff',
-        gray: {
-          50: '#f9fafb',
-          100: '#f3f4f6',
-          200: '#e5e7eb',
-          300: '#d1d5db',
-          400: '#9ca3af',
-          500: '#6b7280',
-          600: '#4b5563',
-          700: '#374151',
-          800: '#1f2937',
-          900: '#111827',
-        }
+      // Mobile-first responsive design
+      screens: {
+        'xs': '475px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
       },
+      // Performance optimizations
       animation: {
-        'breathing': 'breathing 4s ease-in-out infinite',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'glow': 'glow 2s ease-in-out infinite alternate',
+        'spin-slow': 'spin 3s linear infinite',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'bounce-slow': 'bounce 2s infinite',
       },
-      keyframes: {
-        breathing: {
-          '0%, 100%': { transform: 'scale(1)', opacity: '0.3' },
-          '50%': { transform: 'scale(1.1)', opacity: '0.6' },
-        },
-        glow: {
-          '0%': { boxShadow: '0 0 5px rgba(255,255,255,0.1)' },
-          '100%': { boxShadow: '0 0 20px rgba(255,255,255,0.3)' },
-        }
+      // Mobile touch targets
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
       },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
+      // Optimize for mobile performance
+      transitionProperty: {
+        'height': 'height',
+        'spacing': 'margin, padding',
+      }
     },
   },
   plugins: [],
+  // Purge unused styles for production
+  purge: {
+    enabled: process.env.NODE_ENV === 'production',
+    content: [
+      './src/**/*.{js,jsx,ts,tsx}',
+      './public/index.html'
+    ],
+    options: {
+      safelist: [
+        'bg-black',
+        'text-white',
+        'text-gray-400'
+      ]
+    }
+  }
 } 

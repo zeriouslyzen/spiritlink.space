@@ -1,4 +1,3 @@
-import { PythonShell } from 'python-shell';
 import { knowledgeGraphService } from './knowledgeGraphService';
 
 // Types for Neuro-Symbolic Reasoning

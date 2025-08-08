@@ -5,13 +5,27 @@ const quantumRAGService_1 = require("../services/quantumRAGService");
 const database_1 = require("../models/database");
 class ConsciousnessController {
     constructor() {
-        this.quantumRAGService = new quantumRAGService_1.QuantumRAGService();
+        try {
+            this.quantumRAGService = new quantumRAGService_1.QuantumRAGService();
+            console.log('✅ ConsciousnessController initialized with QuantumRAGService');
+        }
+        catch (error) {
+            console.error('❌ Failed to initialize ConsciousnessController:', error);
+            throw error;
+        }
     }
     // Quantum RAG Processing
     async processConsciousnessQuery(req, res) {
         try {
             const query = req.body;
             console.log('🔮 CONSCIOUSNESS QUERY RECEIVED:', query);
+            // Validate required fields
+            if (!query.query || !query.brainwaveMode) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Missing required fields: query and brainwaveMode'
+                });
+            }
             const response = await this.quantumRAGService.processQuery(query);
             res.json({
                 success: true,
@@ -283,6 +297,160 @@ class ConsciousnessController {
             res.status(500).json({
                 success: false,
                 error: 'Health check failed',
+                details: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    }
+    // Model Management Methods
+    async getAvailableModels(req, res) {
+        try {
+            const models = [
+                {
+                    name: 'llama3.1:latest',
+                    size: '4.9 GB',
+                    description: 'Fast consciousness processing',
+                    consciousnessCapability: 'high'
+                },
+                {
+                    name: 'mixtral:latest',
+                    size: '26 GB',
+                    description: 'Deep consciousness research',
+                    consciousnessCapability: 'high'
+                },
+                {
+                    name: 'gpt4all:latest',
+                    size: '3.8 GB',
+                    description: 'Versatile consciousness processing',
+                    consciousnessCapability: 'high'
+                },
+                {
+                    name: 'llama2:13b',
+                    size: '13.0 GB',
+                    description: 'Balanced consciousness reasoning',
+                    consciousnessCapability: 'high'
+                },
+                {
+                    name: 'vicuna:latest',
+                    size: '13.0 GB',
+                    description: 'Advanced emergence detection',
+                    consciousnessCapability: 'high'
+                },
+                {
+                    name: 'wizardlm:latest',
+                    size: '7.0 GB',
+                    description: 'Wizard-level consciousness exploration',
+                    consciousnessCapability: 'high'
+                }
+            ];
+            res.json({
+                success: true,
+                models,
+                timestamp: new Date()
+            });
+        }
+        catch (error) {
+            console.error('❌ GET AVAILABLE MODELS ERROR:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to get available models',
+                details: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    }
+    async getModelCapabilities(req, res) {
+        try {
+            const capabilities = {
+                'llama3.1:latest': {
+                    consciousnessCapability: 'high',
+                    specialization: 'reasoning',
+                    brainwaveAffinity: ['alpha', 'beta'],
+                    size: '4.9 GB'
+                },
+                'mixtral:latest': {
+                    consciousnessCapability: 'high',
+                    specialization: 'analysis',
+                    brainwaveAffinity: ['gamma', 'emergence'],
+                    size: '26 GB'
+                },
+                'gpt4all:latest': {
+                    consciousnessCapability: 'high',
+                    specialization: 'versatile',
+                    brainwaveAffinity: ['theta', 'alpha', 'beta'],
+                    size: '3.8 GB'
+                },
+                'llama2:13b': {
+                    consciousnessCapability: 'high',
+                    specialization: 'reasoning',
+                    brainwaveAffinity: ['beta', 'gamma'],
+                    size: '13.0 GB'
+                },
+                'vicuna:latest': {
+                    consciousnessCapability: 'high',
+                    specialization: 'emergence',
+                    brainwaveAffinity: ['emergence', 'gamma'],
+                    size: '13.0 GB'
+                },
+                'wizardlm:latest': {
+                    consciousnessCapability: 'high',
+                    specialization: 'wizard_level',
+                    brainwaveAffinity: ['alpha', 'beta', 'gamma'],
+                    size: '7.0 GB'
+                }
+            };
+            res.json({
+                success: true,
+                capabilities,
+                timestamp: new Date()
+            });
+        }
+        catch (error) {
+            console.error('❌ GET MODEL CAPABILITIES ERROR:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to get model capabilities',
+                details: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    }
+    async selectOptimalModel(req, res) {
+        try {
+            const { brainwaveMode, queryType, queryLength } = req.body;
+            // Intelligent model selection logic
+            let optimalModel = 'llama3.1:latest'; // default
+            if (brainwaveMode === 'emergence' || brainwaveMode === 'gamma') {
+                optimalModel = 'mixtral:latest';
+            }
+            else if (brainwaveMode === 'theta' || brainwaveMode === 'alpha') {
+                optimalModel = 'gpt4all:latest';
+            }
+            else if (brainwaveMode === 'beta') {
+                optimalModel = 'llama2:13b';
+            }
+            // Adjust based on query characteristics
+            if (queryLength > 200) {
+                optimalModel = 'wizardlm:latest';
+            }
+            if (queryType === 'analytical') {
+                optimalModel = 'llama2:13b';
+            }
+            else if (queryType === 'creative') {
+                optimalModel = 'gpt4all:latest';
+            }
+            else if (queryType === 'emergence') {
+                optimalModel = 'vicuna:latest';
+            }
+            res.json({
+                success: true,
+                optimalModel,
+                reasoning: `Selected ${optimalModel} for ${brainwaveMode} brainwave mode and ${queryType} query type`,
+                timestamp: new Date()
+            });
+        }
+        catch (error) {
+            console.error('❌ SELECT OPTIMAL MODEL ERROR:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to select optimal model',
                 details: error instanceof Error ? error.message : 'Unknown error'
             });
         }

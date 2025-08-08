@@ -1,27 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navigation } from './components/Navigation';
-import ThesidiaAI from './components/ThesidiaAI';
-import { BrainwaveMode } from './components/BrainwaveSelector';
-import CollectiveIntelligence from './components/CollectiveIntelligence';
-import { ResearchFeed } from './components/ResearchFeed';
-import { MovementLab } from './components/MovementLab';
+import { BrainwaveMode } from './types/brainwaves';
+
+// Lazy load all components for better performance
+const ThesidiaAI = lazy(() => import('./components/ThesidiaAI'));
+const CollectiveIntelligence = lazy(() => import('./components/CollectiveIntelligence'));
+const ResearchFeed = lazy(() => import('./components/ResearchFeed'));
+const MovementLab = lazy(() => import('./components/MovementLab'));
+
+// Loading component for lazy loaded components
+const LoadingSpinner = () => (
+  <div className="w-full h-full bg-black text-white flex items-center justify-center">
+    <motion.div
+      className="text-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-gray-400">Loading consciousness interface...</p>
+    </motion.div>
+  </div>
+);
 
 function App() {
   const [brainwaveMode, setBrainwaveMode] = useState<BrainwaveMode>('alpha');
   const [currentSection, setCurrentSection] = useState('thesidia-ai');
-  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
 
   const renderCurrentSection = () => {
     switch (currentSection) {
       case 'movement-lab':
-        return <MovementLab brainwaveMode={brainwaveMode} />;
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <MovementLab brainwaveMode={brainwaveMode} />
+          </Suspense>
+        );
       case 'research-feed':
-        return <ResearchFeed brainwaveMode={brainwaveMode} />;
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ResearchFeed brainwaveMode={brainwaveMode} />
+          </Suspense>
+        );
       case 'thesidia-ai':
-        return <ThesidiaAI brainwaveMode={brainwaveMode} />;
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ThesidiaAI brainwaveMode={brainwaveMode} />
+          </Suspense>
+        );
       case 'collective-intelligence':
-        return <CollectiveIntelligence brainwaveMode={brainwaveMode} />;
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <CollectiveIntelligence brainwaveMode={brainwaveMode} />
+          </Suspense>
+        );
       case 'broadcast':
         return (
           <div className="w-full h-full bg-black text-white p-6">
@@ -38,22 +71,7 @@ function App() {
             </div>
           </div>
         );
-      case 'courses':
-        return (
-          <div className="w-full h-full bg-black text-white p-6">
-            <div className="h-full flex items-center justify-center">
-              <motion.div
-                className="text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <h1 className="text-4xl font-bold mb-4">Consciousness Courses</h1>
-                <p className="text-gray-400">Structured learning paths coming soon...</p>
-              </motion.div>
-            </div>
-          </div>
-        );
+      // 'courses' route removed
       case 'research-journal':
         return (
           <div className="w-full h-full bg-black text-white p-6">
@@ -71,7 +89,11 @@ function App() {
           </div>
         );
       default:
-        return <ThesidiaAI brainwaveMode={brainwaveMode} />;
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ThesidiaAI brainwaveMode={brainwaveMode} />
+          </Suspense>
+        );
     }
   };
 
@@ -92,6 +114,7 @@ function App() {
         animate={{ 
           marginLeft: isNavCollapsed ? '64px' : '256px'
         }}
+        initial={{ marginLeft: '64px' }}
         transition={{ duration: 0.3 }}
       >
         <AnimatePresence mode="wait">

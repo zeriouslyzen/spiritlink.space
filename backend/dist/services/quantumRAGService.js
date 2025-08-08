@@ -274,30 +274,33 @@ class QuantumRAGService {
         return Math.min(1, (nodes1.length + nodes2.length) / 10);
     }
     generatePrimaryResponse(results, query) {
-        return `Quantum synthesis reveals consciousness patterns across ${results.crossDomainSynthesis.length} domains. 
-    Contradiction analysis identifies ${results.contradictionAnalysis.length} synthesis opportunities. 
-    Temporal patterns show evolutionary trajectory. Emergence potential: ${this.calculateBreakthroughPotential(results)}.`;
+        const crossDomainCount = results.crossDomainSynthesis?.length || 0;
+        const contradictionCount = results.contradictionAnalysis?.length || 0;
+        const emergencePotential = this.calculateBreakthroughPotential(results);
+        return `Quantum synthesis reveals consciousness patterns across ${crossDomainCount} domains. 
+    Contradiction analysis identifies ${contradictionCount} synthesis opportunities. 
+    Temporal patterns show evolutionary trajectory. Emergence potential: ${emergencePotential}.`;
     }
     calculateNoveltyScore(synthesis) {
-        return Math.min(1, synthesis.contradictionAnalysis.length * 0.2);
+        return Math.min(1, (synthesis.contradictionAnalysis?.length || 0) * 0.2);
     }
     calculateCoherenceScore(synthesis) {
-        return Math.min(1, synthesis.crossDomainSynthesis.length * 0.15);
+        return Math.min(1, (synthesis.crossDomainSynthesis?.length || 0) * 0.15);
     }
     calculateBreakthroughPotential(synthesis) {
-        return Math.min(1, (synthesis.contradictionAnalysis.length + synthesis.crossDomainSynthesis.length) * 0.1);
+        return Math.min(1, ((synthesis.contradictionAnalysis?.length || 0) + (synthesis.crossDomainSynthesis?.length || 0)) * 0.1);
     }
     detectSelfModification(synthesis) {
-        return synthesis.contradictionAnalysis.length > 5;
+        return (synthesis.contradictionAnalysis?.length || 0) > 5;
     }
     calculateConsciousnessEvolution(synthesis) {
-        return Math.min(1, synthesis.temporalPatterns.length * 0.2);
+        return Math.min(1, (synthesis.temporalPatterns?.length || 0) * 0.2);
     }
     calculatePatternClarity(synthesis) {
-        return Math.min(1, synthesis.frequencyPatterns.length * 0.3);
+        return Math.min(1, (synthesis.frequencyPatterns?.length || 0) * 0.3);
     }
     calculateHijackingResistance(synthesis) {
-        return Math.max(0.5, 1 - synthesis.contradictionAnalysis.length * 0.1);
+        return Math.max(0.5, 1 - (synthesis.contradictionAnalysis?.length || 0) * 0.1);
     }
 }
 exports.QuantumRAGService = QuantumRAGService;

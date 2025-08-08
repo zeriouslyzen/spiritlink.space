@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
+// Note: Temporarily avoid react-markdown due to bundler incompatibility in dev
+// Note: if source-map-loader causes timeouts in dev, consider excluding markdown libs.
 import ConsciousnessMetrics from './ConsciousnessMetrics';
 import { ollamaService } from '../services/ollamaService';
 
@@ -26,9 +27,15 @@ interface ThesidiaAIProps {
 }
 
 const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
+  const API_BASE = (process.env.REACT_APP_API_BASE || `http://${window.location.hostname}:8000`).replace(/\/$/, '');
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionMode, setSessionMode] = useState<'thesidia' | 'matrix'>(() => {
+    const saved = localStorage.getItem('thesidia-session-mode');
+    if (saved === 'matrix' || saved === 'thesidia') return saved;
+    return process.env.REACT_APP_THESIDIA_ENABLED === '1' ? 'thesidia' : 'matrix';
+  });
   const [isRecording, setIsRecording] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [showCommands, setShowCommands] = useState(false);
@@ -53,6 +60,26 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
 
   const [selectedBrainwaveMode, setSelectedBrainwaveMode] = useState<string>('multidimensional');
 
+  // Lightweight markdown -> HTML (bold/italic/code/line breaks only)
+  const renderContent = useCallback((raw: string) => {
+    const escapeHtml = (s: string) => s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    let html = escapeHtml(raw);
+    // inline code `code`
+    html = html.replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 bg-gray-800 border border-gray-700 rounded">$1</code>');
+    // bold **text**
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // italic *text*
+    html = html.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+    // line breaks
+    html = html.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>');
+    return (
+      <div className="whitespace-pre-wrap"><p dangerouslySetInnerHTML={{ __html: html }} /></div>
+    );
+  }, []);
+
   // Load saved messages from localStorage
   useEffect(() => {
     const savedMessages = localStorage.getItem('thesidia-conversation');
@@ -70,6 +97,11 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
       }
     }
   }, []);
+
+  // Persist session mode
+  useEffect(() => {
+    localStorage.setItem('thesidia-session-mode', sessionMode);
+  }, [sessionMode]);
 
   // Save messages to localStorage whenever messages change
   useEffect(() => {
@@ -323,25 +355,45 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
     setIsTyping(true);
 
     try {
-      // Use the existing ollamaService for real AI responses
-      const consciousnessResponse = await ollamaService.queryConsciousness({
-        message: newMessage.content,
-        brainwaveMode: brainwaveMode,
-        context: `User is in ${brainwaveMode} brainwave mode`,
-        researchFocus: 'consciousness evolution and collective intelligence'
+      // Stream from backend
+      const resp = await fetch(`${API_BASE}/api/chat/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: newMessage.content, mode: sessionMode })
       });
 
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: consciousnessResponse.response,
-        timestamp: new Date(),
-        consciousnessInsights: consciousnessResponse.consciousnessInsights,
-        researchSuggestions: consciousnessResponse.researchSuggestions,
-        evolutionMetrics: consciousnessResponse.evolutionMetrics,
-      };
-
-      setMessages(prev => [...prev, aiResponse]);
+      const reader = (resp.body as any).getReader?.();
+      let accumulated = '';
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          accumulated += new TextDecoder().decode(value);
+          setMessages(prev => {
+            const last = prev[prev.length - 1];
+            if (last && last.role === 'assistant' && last.timestamp.getTime() === 0) {
+              const updated = [...prev];
+              updated[updated.length - 1] = { ...last, content: accumulated };
+              return updated;
+            }
+            return [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: accumulated, timestamp: new Date(0) } as Message];
+          });
+        }
+      } else {
+        const text = await resp.text();
+        accumulated = text;
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: accumulated, timestamp: new Date() }]);
+      }
+      // Normalize final timestamp on last assistant message with epoch timestamp
+      setMessages(prev => {
+        if (prev.length === 0) return prev;
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last.role === 'assistant' && last.timestamp.getTime() === 0) {
+          updated[updated.length - 1] = { ...last, timestamp: new Date() };
+        }
+        return updated;
+      });
     } catch (error) {
       console.error('Error getting AI response:', error);
       
@@ -375,10 +427,10 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
 
   return (
     <div className="w-full h-full bg-black text-white flex flex-col">
-      {/* Header */}
-      <div className="glass-dark rounded-2xl p-4 mb-4 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+      {/* Header - sticky and centered */}
+      <div className="glass-dark rounded-2xl p-4 mb-4 flex-shrink-0 sticky top-0 z-10">
+        <div className="flex flex-col items-center text-center space-y-2">
+          <div className="flex items-center justify-center">
             <motion.div 
               className="w-10 h-10 rounded-full flex items-center justify-center relative"
               animate={{
@@ -444,27 +496,47 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                 </motion.div>
               </motion.div>
             </motion.div>
-            <div>
-              <h2 className="text-lg font-semibold">Thesidia AI</h2>
-              <p className="text-xs text-gray-400">Consciousness Research Assistant</p>
-              {saveStatus && (
-                <motion.p 
-                  className="text-xs text-green-400 mt-1"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  💾 {saveStatus}
-                </motion.p>
-              )}
-            </div>
           </div>
-                          <ConsciousnessMetrics brainwaveMode={brainwaveMode} />
+          <div>
+            <h2 className="text-lg font-semibold">Thesidia AI</h2>
+            <p className="text-xs text-gray-400">Consciousness Research Assistant</p>
+            <div className="flex items-center justify-center space-x-2 mt-1">
+                <span className="inline-flex items-center text-[10px] text-purple-300 bg-purple-900/30 border border-purple-700/40 rounded px-2 py-0.5">
+                  {sessionMode === 'thesidia' ? 'Thesidia mode' : 'Matrix mode'}
+                </span>
+                <button
+                  onClick={() => setSessionMode(prev => prev === 'thesidia' ? 'matrix' : 'thesidia')}
+                  className="text-[10px] px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 border border-white/10"
+                  title="Toggle Thesidia/Matrix"
+                >
+                  Toggle
+                </button>
+            </div>
+            {saveStatus && (
+              <motion.p 
+                className="text-xs text-green-400 mt-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                💾 {saveStatus}
+              </motion.p>
+            )}
+          </div>
+          {/* Metrics removed from header for focus */}
         </div>
       </div>
 
-      {/* Messages Area - Scrollable, excludes input */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">
+      {/* Messages Area - Scrollable, excludes input; onboarding when empty */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+        {messages.length === 0 && (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center max-w-xl mx-auto">
+              <h3 className="text-xl font-semibold mb-2">Begin a Consciousness Thread</h3>
+              <p className="text-sm text-gray-400">Ask anything. Use / for commands. Toggle Thesidia/Matrix in the header. Your conversation is saved locally.</p>
+            </div>
+          </div>
+        )}
         <AnimatePresence>
           {messages.map((message) => (
             <motion.div
@@ -492,10 +564,8 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                   )}
                   <div className="prose prose-invert max-w-none">
                     {message.role === 'assistant' ? (
-                      <div className="prose prose-invert max-w-none prose-headings:text-white prose-strong:text-white prose-em:text-white prose-code:text-purple-300 prose-pre:bg-gray-800 prose-pre:border prose-pre:border-gray-700">
-                        <ReactMarkdown>
-                          {message.content}
-                        </ReactMarkdown>
+                      <div className="prose prose-invert max-w-none prose-headings:text-white prose-strong:text-white prose-em:text-white prose-code:text-purple-300 prose-pre:bg-gray-800 prose-pre:border prose-pre:border-gray-700 whitespace-pre-wrap">
+                        {renderContent(message.content)}
                         
                         {/* Consciousness Insights */}
                         {message.consciousnessInsights && message.consciousnessInsights.length > 0 && (
@@ -535,10 +605,8 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                                 >
                                   {message.consciousnessInsights.map((insight, index) => (
                                     <div key={index} className="text-sm text-purple-200 leading-relaxed">
-                                      <div className="prose prose-invert prose-sm max-w-none prose-headings:text-purple-300 prose-strong:text-purple-100 prose-em:text-purple-200 prose-code:text-purple-300">
-                                        <ReactMarkdown>
-                                          {insight}
-                                        </ReactMarkdown>
+                                      <div className="prose prose-invert prose-sm max-w-none prose-headings:text-purple-300 prose-strong:text-purple-100 prose-em:text-purple-200 prose-code:text-purple-300 whitespace-pre-wrap">
+                                        {insight}
                                       </div>
                                     </div>
                                   ))}
@@ -586,10 +654,8 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                                 >
                                   {message.researchSuggestions.map((suggestion, index) => (
                                     <div key={index} className="text-sm text-blue-200 leading-relaxed">
-                                      <div className="prose prose-invert prose-sm max-w-none prose-headings:text-blue-300 prose-strong:text-blue-100 prose-em:text-blue-200 prose-code:text-blue-300">
-                                        <ReactMarkdown>
-                                          {suggestion}
-                                        </ReactMarkdown>
+                                      <div className="prose prose-invert prose-sm max-w-none prose-headings:text-blue-300 prose-strong:text-blue-100 prose-em:text-blue-200 prose-code:text-blue-300 whitespace-pre-wrap">
+                                        {suggestion}
                                       </div>
                                     </div>
                                   ))}
@@ -677,7 +743,7 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
       </div>
 
       {/* Input Container - Fixed at bottom */}
-      <div className="flex-shrink-0 p-4">
+      <div className="flex-shrink-0 p-4 sticky bottom-0 bg-black/60 backdrop-blur-md">
         {/* Command Suggestions */}
         <AnimatePresence>
           {showCommands && (
@@ -755,11 +821,18 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                 type="file"
                 multiple
                 onChange={(e) => handleFileSelect(e.target.files)}
+                aria-label="Attach files"
                 className="hidden"
               />
             </div>
 
             {/* Send Button */}
+            <div className="flex items-center space-x-2 text-xs text-gray-400">
+              {isTyping && <span className="animate-pulse">{sessionMode === 'thesidia' ? 'Thesidia' : 'Matrix'} is thinking…</span>}
+            </div>
+            <div className="flex items-center space-x-2 text-xs text-gray-400">
+              {isTyping && <span className="animate-pulse">{sessionMode === 'thesidia' ? 'Thesidia' : 'Matrix'} is thinking…</span>}
+            </div>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface NavigationProps {
   currentSection: string;
@@ -35,12 +35,6 @@ const navigationItems = [
     symbolColor: '#45B7D1'
   },
   {
-    id: 'courses',
-    name: 'Courses',
-    icon: '🜃', // Earth - structure and foundation
-    description: 'Structured consciousness learning',
-    color: 'from-yellow-500 to-orange-500',
-    symbolColor: '#96CEB4'
   },
   {
     id: 'thesidia-ai',
@@ -74,7 +68,7 @@ const BRAINWAVE_MODES = [
     name: 'Delta',
     description: 'Deep Reflection',
     color: 'from-purple-600 to-indigo-600',
-    icon: '🌊',
+    icon: '💤',
     frequency: '0.5-4 Hz'
   },
   {
@@ -82,7 +76,7 @@ const BRAINWAVE_MODES = [
     name: 'Theta',
     description: 'Creativity & Intuition',
     color: 'from-blue-500 to-purple-500',
-    icon: '🎨',
+    icon: '🌊',
     frequency: '4-8 Hz'
   },
   {
@@ -90,7 +84,7 @@ const BRAINWAVE_MODES = [
     name: 'Alpha',
     description: 'Relaxed Awareness',
     color: 'from-green-500 to-blue-500',
-    icon: '🧘',
+    icon: '🌿',
     frequency: '8-13 Hz'
   },
   {
@@ -98,7 +92,7 @@ const BRAINWAVE_MODES = [
     name: 'Beta',
     description: 'Active Thinking',
     color: 'from-yellow-500 to-green-500',
-    icon: '⚡',
+    icon: '🔧',
     frequency: '13-30 Hz'
   },
   {
@@ -106,7 +100,7 @@ const BRAINWAVE_MODES = [
     name: 'Gamma',
     description: 'Peak Cognition',
     color: 'from-pink-500 to-purple-500',
-    icon: '🌟',
+    icon: '✨',
     frequency: '30-100 Hz'
   },
   {
@@ -126,8 +120,11 @@ export const Navigation: React.FC<NavigationProps> = ({
   onBrainwaveChange,
   onCollapseChange
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isBrainwaveOpen, setIsBrainwaveOpen] = useState(false);
+  // Start collapsed to match App.tsx initial margin-left (prevents overlay on load)
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const closeTimerRef = useRef<number | null>(null);
+  const openTimerRef = useRef<number | null>(null);
 
   const getAnimationSpeed = () => {
     switch (brainwaveMode) {
@@ -147,14 +144,111 @@ export const Navigation: React.FC<NavigationProps> = ({
     onCollapseChange?.(newCollapsedState);
   };
 
+  // Detect mobile breakpoint
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  // Intent-based auto open/close via edge hover (desktop only)
+  const scheduleClose = (delay = 400) => {
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsCollapsed(true);
+      onCollapseChange?.(true);
+    }, delay);
+  };
+  const scheduleOpen = (delay = 120) => {
+    if (openTimerRef.current) window.clearTimeout(openTimerRef.current);
+    openTimerRef.current = window.setTimeout(() => {
+      setIsCollapsed(false);
+      onCollapseChange?.(false);
+    }, delay);
+  };
+
   const currentBrainwaveMode = BRAINWAVE_MODES.find(mode => mode.id === brainwaveMode) || BRAINWAVE_MODES[2];
 
+  const BrainwaveIcon: React.FC<{ id: string; className?: string; style?: React.CSSProperties }> = ({ id, className, style }) => {
+    const common = 'w-5 h-5';
+    const cls = `${common} ${className || ''}`.trim();
+    switch (id) {
+      case 'delta':
+        return (
+          <svg className={cls} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M4 15c2 2 4 3 8 3s6-1 8-3" strokeLinecap="round" />
+            <path d="M6 12c1.5 1.5 3 2 6 2s4.5-.5 6-2" strokeLinecap="round" />
+            <path d="M8 9c1 .8 2 1 4 1s3-.2 4-1" strokeLinecap="round" />
+          </svg>
+        );
+      case 'theta':
+        return (
+          <svg className={cls} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M3 12h18" strokeLinecap="round" />
+            <path d="M12 3c-3 3-3 15 0 18" />
+            <path d="M12 3c3 3 3 15 0 18" />
+          </svg>
+        );
+      case 'alpha':
+        return (
+          <svg className={cls} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="6" />
+            <path d="M12 2v4M12 18v4M2 12h4M18 12h4" strokeLinecap="round" />
+          </svg>
+        );
+      case 'beta':
+        return (
+          <svg className={cls} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M4 12h6a4 4 0 110 8H4z" />
+            <path d="M4 4h7a3.5 3.5 0 110 7H4z" />
+          </svg>
+        );
+      case 'gamma':
+        return (
+          <svg className={cls} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M12 2l2.5 5 5.5.5-4 3.5 1.2 5.5L12 14l-5.2 2.5 1.2-5.5-4-3.5 5.5-.5z" />
+          </svg>
+        );
+      case 'emergence':
+      default:
+        return (
+          <svg className={cls} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M12 4a8 8 0 100 16 8 8 0 000-16z" />
+            <path d="M12 4c3 3 3 13 0 16M12 4C9 7 9 17 12 20" />
+          </svg>
+        );
+    }
+  };
+
+  const modeIndex = useMemo(() => BRAINWAVE_MODES.findIndex((m) => m.id === brainwaveMode), [brainwaveMode]);
+
+  const getModeColor = (id: string) => {
+    switch (id) {
+      case 'delta': return '#60A5FA'; // blue-400
+      case 'theta': return '#22D3EE'; // cyan-400
+      case 'alpha': return '#34D399'; // emerald-400
+      case 'beta': return '#F59E0B'; // amber-500
+      case 'gamma': return '#A78BFA'; // violet-400
+      case 'emergence': default: return '#F472B6'; // pink-400
+    }
+  };
+
   return (
-    <div className="fixed left-0 top-0 h-full z-40">
+    <div
+      className="fixed left-0 top-0 h-full z-40"
+      onMouseEnter={() => {
+        if (!isMobile) scheduleOpen(80);
+      }}
+      onMouseLeave={() => {
+        if (!isMobile) scheduleClose(300);
+      }}
+    >
       <motion.div
         className={`h-full transition-all duration-300 flex flex-col ${
           isCollapsed ? 'w-16' : 'w-64'
-        }`}
+        } ${isMobile ? 'backdrop-blur-md bg-black/80' : ''}`}
         style={{
           background: 'rgba(0, 0, 0, 0.85)',
           backdropFilter: 'blur(20px) saturate(180%)',
@@ -207,14 +301,14 @@ export const Navigation: React.FC<NavigationProps> = ({
               whileTap={{ scale: 0.95 }}
             >
               <span className="text-white text-lg">
-                {isCollapsed ? '→' : '←'}
+                {isCollapsed ? '›' : '‹'}
               </span>
             </motion.button>
           </div>
         </div>
 
         {/* Navigation Items - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+          <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {navigationItems.map((item, index) => (
             <motion.div
               key={item.id}
@@ -320,142 +414,58 @@ export const Navigation: React.FC<NavigationProps> = ({
                     />
                   </div>
                 </div>
-
-                {/* Breakthrough Alert */}
-                <motion.div
-                  className="rounded-lg p-3"
-                  style={{
-                    background: 'rgba(255, 193, 7, 0.2)',
-                    backdropFilter: 'blur(10px)',
-                    WebkitBackdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 193, 7, 0.3)'
-                  }}
-                  animate={{ 
-                    scale: [1, 1.02, 1],
-                    opacity: [0.8, 1, 0.8]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg">🔥</span>
-                    <div className="text-sm">
-                      <div className="font-semibold text-white">Breakthrough Detected</div>
-                      <div className="text-xs opacity-90 text-white">1,247 users synchronized</div>
-                    </div>
-                  </div>
-                </motion.div>
               </div>
             </motion.div>
           )}
 
           {/* Brainwave Selector - Bottom Icon */}
           <div className="mt-3">
-            <div className="relative">
-              {/* Brainwave Icon Button */}
-              <motion.button
-                className="w-full p-3 rounded-lg transition-all duration-200 flex items-center space-x-3"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
-                }}
-                onClick={() => setIsBrainwaveOpen(!isBrainwaveOpen)}
-                whileHover={{ 
-                  x: 4,
-                  background: 'rgba(255, 255, 255, 0.1)'
-                }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <motion.div 
-                  className="text-2xl"
-                  style={{ color: '#FFFFFF' }}
+            {!isCollapsed ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-gray-400">Brainwave</div>
+                  <div className="text-xs text-gray-400">{currentBrainwaveMode.name}</div>
+                </div>
+                <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-2 rounded-full bg-white/70"
+                    initial={false}
+                    animate={{ width: `${((modeIndex + 1) / BRAINWAVE_MODES.length) * 100}%` }}
+                    transition={{ duration: 0.25 }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-gray-500">
+                  {BRAINWAVE_MODES.map((m) => (
+                    <div key={m.id} className="flex-1 flex items-center justify-center">
+                      <button
+                        aria-label={`Switch to ${m.name}`}
+                        className={`h-6 w-6 rounded-full border ${m.id === brainwaveMode ? 'border-white bg-white/30' : 'border-white/20 bg-white/5 hover:bg-white/10'}`}
+                        title={`${m.name}: ${m.description}`}
+                        onClick={() => onBrainwaveChange(m.id)}
+                      >
+                        <BrainwaveIcon id={m.id} className="mx-auto text-white/90" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 rounded-lg bg-transparent flex items-center justify-center">
+                <motion.div
+                  initial={false}
                   animate={{
-                    scale: [1, 1.1, 1],
-                    opacity: [0.8, 1, 0.8]
+                    boxShadow: `0 0 16px ${getModeColor(currentBrainwaveMode.id)}60, 0 0 32px ${getModeColor(currentBrainwaveMode.id)}30`,
+                    color: getModeColor(currentBrainwaveMode.id)
                   }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
+                  transition={{ duration: 0.3 }}
+                  className="inline-flex items-center justify-center w-9 h-9 rounded-full"
+                  style={{ border: 'none' }}
+                  title={currentBrainwaveMode.name}
                 >
-                  📊
+                  <BrainwaveIcon id={currentBrainwaveMode.id} className="text-current" />
                 </motion.div>
-                {!isCollapsed && (
-                  <div className="flex-1 text-left">
-                    <div className="font-medium text-white">{currentBrainwaveMode.name}</div>
-                    <div className="text-xs opacity-70 text-gray-300">{currentBrainwaveMode.description}</div>
-                  </div>
-                )}
-              </motion.button>
-
-              {/* Brainwave Dropdown */}
-              <AnimatePresence mode="wait">
-                {isBrainwaveOpen && !isCollapsed && (
-                  <>
-                    {/* Backdrop */}
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="fixed inset-0 z-[99999]"
-                      onClick={() => setIsBrainwaveOpen(false)}
-                    />
-                    
-                    {/* Dropdown */}
-                    <motion.div
-                      initial={{ opacity: 0, y: -20, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{ 
-                        duration: 0.3,
-                        ease: [0.4, 0, 0.2, 1]
-                      }}
-                      className="absolute bottom-full left-0 right-0 mb-2 glass-dark rounded-xl p-2 z-[999999] shadow-2xl border border-white/10"
-                    >
-                      <div className="space-y-1">
-                        {BRAINWAVE_MODES.map((mode) => (
-                          <motion.button
-                            key={mode.id}
-                            className={`w-full text-left p-3 rounded-lg transition-all ${
-                              mode.id === brainwaveMode 
-                                ? 'glass-medium text-white' 
-                                : 'glass-input text-gray-300 hover:glass-medium hover:text-white'
-                            }`}
-                            onClick={() => {
-                              onBrainwaveChange(mode.id);
-                              setIsBrainwaveOpen(false);
-                            }}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${mode.color} flex items-center justify-center text-sm`}>
-                                {mode.icon}
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-medium">{mode.name}</div>
-                                <div className="text-sm text-gray-400">{mode.description}</div>
-                                <div className="text-xs text-gray-500">{mode.frequency}</div>
-                              </div>
-                              {mode.id === brainwaveMode && (
-                                <motion.div
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  className="w-2 h-2 bg-green-400 rounded-full"
-                                />
-                              )}
-                            </div>
-                          </motion.button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

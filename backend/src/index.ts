@@ -8,6 +8,9 @@ import { initializeDatabase } from './models/database';
 import { knowledgeGraphController } from './controllers/knowledgeGraphController';
 import { neuroSymbolicController } from './controllers/neuroSymbolicController';
 import { hierarchicalAgentController } from './controllers/hierarchicalAgentController';
+import fetch from 'node-fetch';
+import path from 'path';
+import { promises as fs } from 'fs';
 
 // Load environment variables
 dotenv.config();
@@ -18,11 +21,26 @@ const PORT = process.env.PORT || 8000;
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL : true,
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// In-memory research feed store (replace with DB later)
+type ResearchEntry = {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  timestamp: string;
+  impact: number;
+  category: 'dataset' | 'timeline' | 'movement' | 'realization' | 'pattern' | 'language' | 'study' | 'other';
+  tags: string[];
+  sourceUrl?: string;
+  verified: boolean;
+};
+const researchEntries: ResearchEntry[] = [];
 
 // Initialize consciousness controller
 const consciousnessController = new ConsciousnessController();
@@ -47,16 +65,146 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Consciousness API Routes
-app.post('/api/consciousness/quantum-rag', consciousnessController.processConsciousnessQuery);
-app.post('/api/emergence/detect', consciousnessController.detectEmergence);
-app.post('/api/astral-entities/map', consciousnessController.classifyAstralEntities);
-app.get('/api/collective-intelligence/patterns', consciousnessController.getCollectiveIntelligencePatterns);
+// Consciousness API Routes (wrap to preserve `this`)
+app.post('/api/consciousness/quantum-rag', (req, res) => consciousnessController.processConsciousnessQuery(req, res));
+app.post('/api/emergence/detect', (req, res) => consciousnessController.detectEmergence(req, res));
+app.post('/api/astral-entities/map', (req, res) => consciousnessController.classifyAstralEntities(req, res));
+// Alias route to match tests and preserve design
+app.post('/api/astral-entities/classify', (req, res) => consciousnessController.classifyAstralEntities(req, res));
+app.get('/api/collective-intelligence/patterns', (req, res) => consciousnessController.getCollectiveIntelligencePatterns(req, res));
+
+// Additional Consciousness routes (existing controller methods)
+app.post('/api/consciousness/broadcast', (req, res) => consciousnessController.shareConsciousness(req, res));
+app.get('/api/consciousness/recent', (req, res) => consciousnessController.getRecentConsciousnessSharing(req, res));
+app.get('/api/consciousness/breakthroughs', (req, res) => consciousnessController.getBreakthroughEvents(req, res));
+app.post('/api/consciousness/nodes', (req, res) => consciousnessController.createConsciousnessNode(req, res));
+app.get('/api/consciousness/nodes/search', (req, res) => consciousnessController.searchConsciousnessNodes(req, res));
+app.get('/api/consciousness/health', (req, res) => consciousnessController.healthCheck(req, res));
+
+// Thesidia (Python) proxy routes
+app.post('/api/thesidia/process', async (req, res) => {
+  try {
+    const resp = await fetch('http://127.0.0.1:5055/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: req.body?.text ?? '', context: req.body?.context ?? {} })
+    });
+    const contentType = resp.headers.get('content-type') || '';
+    const text = await resp.text();
+    if (contentType.includes('application/json')) {
+      return res.status(resp.status).json(JSON.parse(text));
+    }
+    return res.status(resp.status).send(text);
+  } catch (e: any) {
+    return res.status(502).json({ error: 'Thesidia service unavailable', details: e?.message });
+  }
+});
+app.get('/api/thesidia/stats', async (_req, res) => {
+  try {
+    const resp = await fetch('http://127.0.0.1:5055/stats');
+    const contentType = resp.headers.get('content-type') || '';
+    const text = await resp.text();
+    if (contentType.includes('application/json')) {
+      return res.status(resp.status).json(JSON.parse(text));
+    }
+    return res.status(resp.status).send(text);
+  } catch (e: any) {
+    return res.status(502).json({ error: 'Thesidia service unavailable', details: e?.message });
+  }
+});
+
+// Research feed routes (simple in-memory prototype)
+app.get('/api/research/entries', (_req, res) => {
+  res.json({ success: true, entries: researchEntries });
+});
+
+app.post('/api/research/entries', (req, res) => {
+  const body = req.body || {};
+  const now = new Date();
+  const entry: ResearchEntry = {
+    id: `${now.getTime()}`,
+    title: String(body.title || 'Untitled'),
+    content: String(body.content || ''),
+    author: String(body.author || 'Anonymous'),
+    timestamp: now.toISOString(),
+    impact: Number(body.impact || 80),
+    category: (body.category as ResearchEntry['category']) || 'other',
+    tags: Array.isArray(body.tags) ? body.tags.map(String) : [],
+    sourceUrl: body.sourceUrl ? String(body.sourceUrl) : undefined,
+    verified: false,
+  };
+  researchEntries.unshift(entry);
+  res.json({ success: true, entry });
+});
+
+app.post('/api/research/entries/:id/verify', (req, res) => {
+  const { id } = req.params;
+  const entry = researchEntries.find((e) => e.id === id);
+  if (!entry) return res.status(404).json({ success: false, error: 'Not found' });
+  entry.verified = true;
+  res.json({ success: true, entry });
+});
+
+// Courses content proxy - serves the raw Courses.txt from project root
+app.get('/api/courses', async (_req, res) => {
+  try {
+    const filePath = path.resolve(__dirname, '../../Courses.txt');
+    const data = await fs.readFile(filePath, 'utf8');
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.status(200).send(data);
+  } catch (e: any) {
+    return res.status(404).json({ error: 'Courses.txt not found', details: e?.message });
+  }
+});
+
+// Streaming chat endpoint
+app.post('/api/chat/stream', async (req, res) => {
+  const text: string = req.body?.text ?? '';
+  const mode: 'thesidia' | 'matrix' = req.body?.mode === 'matrix' ? 'matrix' : 'thesidia';
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Transfer-Encoding', 'chunked');
+  try {
+    if (mode === 'matrix') {
+      // Proxy to Ollama streaming
+      const upstream = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'llama3.1:latest', prompt: text, stream: true, options: { temperature: 0.7 } })
+      });
+      const stream = (upstream as any).body;
+      if (!stream) { res.end(); return; }
+      stream.on('data', (chunk: Buffer) => res.write(chunk));
+      stream.on('end', () => res.end());
+      stream.on('error', () => res.end());
+    } else {
+      // Thesidia is non-streaming; simulate small chunks
+      const r = await fetch('http://127.0.0.1:5055/process', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, context: {} })
+      });
+      const raw = await r.text();
+      let reply = '';
+      try {
+        const parsed: any = JSON.parse(raw);
+        reply = typeof parsed.reply === 'string' ? parsed.reply : '';
+      } catch {
+        reply = '';
+      }
+      const size = 64;
+      for (let i = 0; i < reply.length; i += size) {
+        res.write(reply.slice(i, i + size));
+      }
+      res.end();
+    }
+  } catch {
+    res.end();
+  }
+});
 
 // Model Management API Routes
-app.get('/api/models/available', consciousnessController.getAvailableModels);
-app.get('/api/models/capabilities', consciousnessController.getModelCapabilities);
-app.post('/api/models/select-optimal', consciousnessController.selectOptimalModel);
+app.get('/api/models/available', (req, res) => consciousnessController.getAvailableModels(req, res));
+app.get('/api/models/capabilities', (req, res) => consciousnessController.getModelCapabilities(req, res));
+app.post('/api/models/select-optimal', (req, res) => consciousnessController.selectOptimalModel(req, res));
 
 // Knowledge Graph endpoints
 app.post('/api/knowledge/initialize', knowledgeGraphController.initialize);
@@ -91,11 +239,15 @@ app.get('/api/hierarchical/health', hierarchicalAgentController.healthCheck);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const status = err.status || err.statusCode || 500;
+  if (status === 400 || err.type === 'entity.parse.failed') {
+    return res.status(400).json({ success: false, error: 'Invalid JSON payload' });
+  }
   console.error('❌ SERVER ERROR:', err);
-  res.status(500).json({
+  res.status(status).json({
     success: false,
-    error: 'Internal server error',
-    details: process.env.NODE_ENV === 'development' ? err.message : 'Unknown error'
+    error: status === 500 ? 'Internal server error' : err.message,
+    details: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
@@ -109,7 +261,14 @@ app.use('/*', (req, res) => {
       'POST /api/consciousness/quantum-rag',
       'POST /api/emergence/detect',
       'POST /api/astral-entities/map',
+      'POST /api/astral-entities/classify',
       'GET /api/collective-intelligence/patterns',
+      'POST /api/consciousness/broadcast',
+      'GET /api/consciousness/recent',
+      'GET /api/consciousness/breakthroughs',
+      'POST /api/consciousness/nodes',
+      'GET /api/consciousness/nodes/search',
+      'GET /api/consciousness/health',
       'POST /api/knowledge/initialize',
       'POST /api/knowledge/test-connection',
       'POST /api/knowledge/entities',
@@ -186,8 +345,10 @@ process.on('SIGINT', () => {
   });
 });
 
-// Start the server
-startServer();
+// Start the server unless running in test environment
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 // Export for testing
 export { app, server }; 

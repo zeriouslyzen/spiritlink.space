@@ -7,8 +7,7 @@ interface ConsciousnessMetricsProps {
 
 const ConsciousnessMetrics: React.FC<ConsciousnessMetricsProps> = ({ brainwaveMode }) => {
   const [consciousnessLevel, setConsciousnessLevel] = useState(0.73);
-  const [breakthroughs, setBreakthroughs] = useState(3);
-  const [evolutionStreak, setEvolutionStreak] = useState(7);
+  // Temporarily hide breakthroughs and streak
   const [collectiveScore, setCollectiveScore] = useState(847);
   const [isPulsing, setIsPulsing] = useState(false);
 
@@ -52,6 +51,19 @@ const ConsciousnessMetrics: React.FC<ConsciousnessMetricsProps> = ({ brainwaveMo
       default: return 'text-gray-300';
     }
   };
+
+  // Alchemical-styled inline SVG icons (inherit currentColor)
+  // Icons hidden for now (breakthrough, streak)
+
+  const IconCollective = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3c3.5 3 3.5 15 0 18" />
+      <path d="M7 5c2 2 2 12 0 14" />
+      <path d="M17 5c-2 2-2 12 0 14" />
+    </svg>
+  );
 
   return (
     <div className="flex items-center space-x-4">
@@ -104,35 +116,7 @@ const ConsciousnessMetrics: React.FC<ConsciousnessMetricsProps> = ({ brainwaveMo
         </div>
       </motion.div>
 
-      {/* Breakthroughs */}
-      <motion.div
-        className="flex items-center space-x-2"
-        whileHover={{ scale: 1.05 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-          <span className="text-sm">🧠</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-xs text-gray-400">Breakthroughs</span>
-          <span className="text-sm font-medium text-white">{breakthroughs}</span>
-        </div>
-      </motion.div>
-
-      {/* Evolution Streak */}
-      <motion.div
-        className="flex items-center space-x-2"
-        whileHover={{ scale: 1.05 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-          <span className="text-sm">🔥</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-xs text-gray-400">Streak</span>
-          <span className="text-sm font-medium text-white">{evolutionStreak}d</span>
-        </div>
-      </motion.div>
+      {/* Breakthroughs and Streak temporarily removed */}
 
       {/* Collective Intelligence */}
       <motion.div
@@ -140,8 +124,8 @@ const ConsciousnessMetrics: React.FC<ConsciousnessMetricsProps> = ({ brainwaveMo
         whileHover={{ scale: 1.05 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-          <span className="text-sm">🌍</span>
+        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/90">
+          <IconCollective />
         </div>
         <div className="flex flex-col">
           <span className="text-xs text-gray-400">Collective</span>

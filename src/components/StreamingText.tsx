@@ -95,8 +95,7 @@ const StreamingText: React.FC<StreamingTextProps> = ({
           animate: { opacity: 1, y: 0, scale: 1 },
           transition: { 
             duration: 0.8, 
-            delay: baseDelay,
-            ease: "easeOut"
+            delay: baseDelay
           }
         };
       case 'theta':
@@ -105,8 +104,7 @@ const StreamingText: React.FC<StreamingTextProps> = ({
           animate: { opacity: 1, x: 0, rotateY: 0 },
           transition: { 
             duration: 0.6, 
-            delay: baseDelay,
-            ease: "easeOut"
+            delay: baseDelay
           }
         };
       case 'alpha':
@@ -115,8 +113,7 @@ const StreamingText: React.FC<StreamingTextProps> = ({
           animate: { opacity: 1, scale: 1 },
           transition: { 
             duration: 0.5, 
-            delay: baseDelay,
-            ease: "easeOut"
+            delay: baseDelay
           }
         };
       case 'beta':
@@ -125,8 +122,7 @@ const StreamingText: React.FC<StreamingTextProps> = ({
           animate: { opacity: 1, y: 0 },
           transition: { 
             duration: 0.3, 
-            delay: baseDelay,
-            ease: "easeOut"
+            delay: baseDelay
           }
         };
       case 'gamma':
@@ -135,8 +131,7 @@ const StreamingText: React.FC<StreamingTextProps> = ({
           animate: { opacity: 1, scale: 1, rotateZ: 0 },
           transition: { 
             duration: 0.2, 
-            delay: baseDelay,
-            ease: "easeOut"
+            delay: baseDelay
           }
         };
       default:
@@ -145,8 +140,7 @@ const StreamingText: React.FC<StreamingTextProps> = ({
           animate: { opacity: 1, scale: 1 },
           transition: { 
             duration: 0.5, 
-            delay: baseDelay,
-            ease: "easeOut"
+            delay: baseDelay
           }
         };
     }

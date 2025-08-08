@@ -15,6 +15,13 @@ export async function initializeDatabase() {
   const client = await pool.connect();
   
   try {
+    // Ensure pgcrypto extension for gen_random_uuid()
+    try {
+      await client.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
+    } catch (e) {
+      // Ignore if extension already exists or unsupported in test env
+    }
+    
     // Create consciousness nodes table
     await client.query(`
       CREATE TABLE IF NOT EXISTS consciousness_nodes (

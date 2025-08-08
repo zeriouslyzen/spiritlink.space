@@ -7,7 +7,13 @@ export class ConsciousnessController {
   private quantumRAGService: QuantumRAGService;
 
   constructor() {
-    this.quantumRAGService = new QuantumRAGService();
+    try {
+      this.quantumRAGService = new QuantumRAGService();
+      console.log('✅ ConsciousnessController initialized with QuantumRAGService');
+    } catch (error) {
+      console.error('❌ Failed to initialize ConsciousnessController:', error);
+      throw error;
+    }
   }
 
   // Quantum RAG Processing
@@ -16,6 +22,14 @@ export class ConsciousnessController {
       const query: ConsciousnessQuery = req.body;
       
       console.log('🔮 CONSCIOUSNESS QUERY RECEIVED:', query);
+      
+      // Validate required fields
+      if (!query.query || !query.brainwaveMode) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: query and brainwaveMode'
+        });
+      }
       
       const response = await this.quantumRAGService.processQuery(query);
       

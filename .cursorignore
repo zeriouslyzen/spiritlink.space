@@ -1,0 +1,10 @@
+**/node_modules/**
+**/dist/**
+**/build/**
+**/.cache/**
+**/*.log
+**/.DS_Store
+lighthouse-report.html
+public/*.map
+coverage/**
+Untitled.rtf

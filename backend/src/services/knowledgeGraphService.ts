@@ -29,8 +29,11 @@ export class KnowledgeGraphService {
 
   constructor() {
     this.driver = neo4j.driver(
-      'bolt://localhost:7687',
-      neo4j.auth.basic('neo4j', 'spiritlink2025') // Updated password
+      process.env.NEO4J_URI || 'bolt://localhost:7687',
+      neo4j.auth.basic(
+        process.env.NEO4J_USER || 'neo4j',
+        process.env.NEO4J_PASSWORD || 'spiritlink2025'
+      )
     );
   }
 

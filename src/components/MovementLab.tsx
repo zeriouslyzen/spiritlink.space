@@ -136,7 +136,7 @@ const movementTypeIcons = {
   meditation: '🧘‍♀️'
 };
 
-export const MovementLab: React.FC<MovementLabProps> = ({ brainwaveMode }) => {
+const MovementLab: React.FC<MovementLabProps> = ({ brainwaveMode }) => {
   const [posts, setPosts] = useState<MovementPost[]>(mockMovementPosts);
   const [selectedType, setSelectedType] = useState<string>('all');
   const [isRecording, setIsRecording] = useState(false);
@@ -156,6 +156,8 @@ export const MovementLab: React.FC<MovementLabProps> = ({ brainwaveMode }) => {
   const filteredPosts = selectedType === 'all' 
     ? posts 
     : posts.filter(post => post.movementType === selectedType);
+  // Show only one showcase post for now
+  const displayPosts = filteredPosts.slice(0, 1);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!canvasRef.current) return;
@@ -216,7 +218,7 @@ export const MovementLab: React.FC<MovementLabProps> = ({ brainwaveMode }) => {
       {/* Pinterest-style Movement Grid */}
       <div className="masonry-grid">
         <AnimatePresence>
-          {filteredPosts.map((post, index) => (
+          {displayPosts.map((post, index) => (
             <motion.div
               key={post.id}
               className="masonry-item"
@@ -298,8 +300,26 @@ export const MovementLab: React.FC<MovementLabProps> = ({ brainwaveMode }) => {
               </div>
             </motion.div>
           ))}
+          {/* Coming Soon Card */}
+          <motion.div
+            key="coming-soon"
+            className="masonry-item"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <div className="pinterest-card hover-lift flex items-center justify-center min-h-[240px]">
+              <div className="text-center p-6">
+                <div className="text-3xl mb-2">⚗</div>
+                <h3 className="text-xl font-semibold text-white mb-2">Coming soon</h3>
+                <p className="text-sm text-gray-300">Curated movement experiences are being crafted.</p>
+              </div>
+            </div>
+          </motion.div>
         </AnimatePresence>
       </div>
     </div>
   );
-}; 
+};
+
+export default MovementLab;

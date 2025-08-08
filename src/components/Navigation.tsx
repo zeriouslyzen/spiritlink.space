@@ -35,8 +35,6 @@ const navigationItems = [
     symbolColor: '#45B7D1'
   },
   {
-  },
-  {
     id: 'thesidia-ai',
     name: 'Thesidia AI',
     icon: '⚡', // Lightning - intelligence and power

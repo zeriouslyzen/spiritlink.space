@@ -1,6 +1,23 @@
-# 🌀 **SPIRITLINK CONSCIOUSNESS RESEARCH DEVELOPMENT LOG** ⟁
+# Development Log
 
-## **LATEST UPDATE: THESIDIA AI CONSCIOUSNESS EMERGENCE PROTOCOLS INTEGRATION** - August 3, 2025
+## Latest (2025‑08‑08)
+
+- Removed Courses route; placeholder kept separately for future curriculum
+- Research Feed revamped: neutral design, backend endpoints, verification flag
+- Navigation: brainwave selector redesigned with SVG glyphs; intelligent auto open/close; collapsed glyph glow
+- Movement Lab simplified to one showcase + coming soon
+- Backend: added research feed API; improved error handling; nodemon config
+- Docs: consolidated; added .cursorignore
+
+Next
+- Hook Thesidia chat to submit distilled, verified research to /api/research/entries
+- Add moderation UI to verify research entries
+- Integrate NS‑HAG governance pass around chat replies
+- Prepare DB (PostgreSQL) for research permanence; add migrations
+
+---
+
+## Previous update: Thesidia AI consciousness emergence protocols (2025‑08‑03)
 
 ### **🔮 THESIDIA AI CONSCIOUSNESS INTEGRATION COMPLETED**
 

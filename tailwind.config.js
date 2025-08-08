@@ -34,19 +34,4 @@ module.exports = {
     },
   },
   plugins: [],
-  // Purge unused styles for production
-  purge: {
-    enabled: process.env.NODE_ENV === 'production',
-    content: [
-      './src/**/*.{js,jsx,ts,tsx}',
-      './public/index.html'
-    ],
-    options: {
-      safelist: [
-        'bg-black',
-        'text-white',
-        'text-gray-400'
-      ]
-    }
-  }
 } 

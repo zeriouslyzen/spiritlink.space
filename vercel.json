@@ -7,5 +7,3 @@
     "REACT_APP_THESIDIA_ENABLED": "1"
   }
 }
-"EOF"
-; git add vercel.json; git commit -m "Add vercel.json (CRA config, force build)" | cat; git push origin master | cat

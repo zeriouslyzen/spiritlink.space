@@ -8,7 +8,6 @@ const ThesidiaAI = lazy(() => import('./components/ThesidiaAI'));
 const CollectiveIntelligence = lazy(() => import('./components/CollectiveIntelligence'));
 const ResearchFeed = lazy(() => import('./components/ResearchFeed'));
 const MovementLab = lazy(() => import('./components/MovementLab'));
-const Home = lazy(() => import('./components/Home'));
 
 // Loading component for lazy loaded components
 const LoadingSpinner = () => (
@@ -27,18 +26,11 @@ const LoadingSpinner = () => (
 
 function App() {
   const [brainwaveMode, setBrainwaveMode] = useState<BrainwaveMode>('alpha');
-  const [currentSection, setCurrentSection] = useState('home');
-  const [theme, setTheme] = useState<'dark' | 'epaper'>(() => (localStorage.getItem('sl-theme') === 'epaper' ? 'epaper' : 'dark'));
+  const [currentSection, setCurrentSection] = useState('thesidia-ai');
   const [isNavCollapsed, setIsNavCollapsed] = useState(true);
 
   const renderCurrentSection = () => {
     switch (currentSection) {
-      case 'home':
-        return (
-          <Suspense fallback={<LoadingSpinner />}>
-            <Home brainwaveMode={brainwaveMode} />
-          </Suspense>
-        );
       case 'movement-lab':
         return (
           <Suspense fallback={<LoadingSpinner />}>
@@ -105,17 +97,6 @@ function App() {
     }
   };
 
-  // Apply theme to document
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'epaper') {
-      root.classList.add('theme-epaper');
-    } else {
-      root.classList.remove('theme-epaper');
-    }
-    localStorage.setItem('sl-theme', theme);
-  }, [theme]);
-
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Navigation */}
@@ -125,8 +106,6 @@ function App() {
         brainwaveMode={brainwaveMode}
         onBrainwaveChange={(brainwave: string) => setBrainwaveMode(brainwave as BrainwaveMode)}
         onCollapseChange={setIsNavCollapsed}
-        theme={theme}
-        onThemeChange={setTheme}
       />
 
       {/* Main Content - Dynamic positioning */}

@@ -7,19 +7,9 @@ interface NavigationProps {
   brainwaveMode: string;
   onBrainwaveChange: (brainwave: string) => void;
   onCollapseChange?: (collapsed: boolean) => void;
-  theme?: 'dark' | 'epaper';
-  onThemeChange?: (t: 'dark' | 'epaper') => void;
 }
 
 const navigationItems = [
-  {
-    id: 'home',
-    name: 'Home',
-    icon: '⚗', // Alchemical flask - entry point
-    description: 'Onboarding & personal dashboard',
-    color: 'from-violet-500 to-indigo-500',
-    symbolColor: '#A78BFA'
-  },
   {
     id: 'movement-lab',
     name: 'Movement Lab',
@@ -126,9 +116,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   onSectionChange,
   brainwaveMode,
   onBrainwaveChange,
-  onCollapseChange,
-  theme = 'dark',
-  onThemeChange
+  onCollapseChange
 }) => {
   // Start collapsed to match App.tsx initial margin-left (prevents overlay on load)
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -401,17 +389,6 @@ export const Navigation: React.FC<NavigationProps> = ({
               transition={{ delay: 0.5 }}
             >
               <div className="space-y-3">
-                {/* Theme toggle */}
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">Theme</span>
-                  <button
-                    className="text-xs px-2 py-1 rounded bg-white/10 border border-white/20"
-                    onClick={() => onThemeChange?.(theme === 'dark' ? 'epaper' : 'dark')}
-                    title="Toggle theme"
-                  >
-                    {theme === 'dark' ? 'Dark' : 'E‑paper'}
-                  </button>
-                </div>
                 {/* Collective Activity */}
                 <div 
                   className="rounded-lg p-3"

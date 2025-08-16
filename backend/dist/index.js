@@ -429,22 +429,19 @@ app.post('/api/chat/stream', async (req, res) => {
                     model: requestedModel || 'llama3.1:latest',
                     response: reply
                 });
-                // Update session summary via Thesidia
+                // Update session summary via Thesidia Symbolic Wrapper
                 try {
-                    const sumResp = await (0, node_fetch_1.default)('http://127.0.0.1:5055/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: `SUMMARIZE SESSION STATE IN ONE PARAGRAPH (purpose, key facts, decisions, next step) BASED ON NEW REPLY:\n${reply}`, context: { task: 'summarize' } }) });
-                    const sumText = await sumResp.text();
-                    let summary = '';
-                    try {
-                        const parsed = JSON.parse(sumText);
-                        summary = parsed?.reply || sumText;
+                    const thesidia = thesidia_1.ThesidiaOrchestrator.getInstance();
+                    const summaryOutput = await thesidia.processInput(`SUMMARIZE SESSION STATE IN ONE PARAGRAPH (purpose, key facts, decisions, next step) BASED ON NEW REPLY:\n${reply}`, sessionId, userId, 'theta' // Use theta mode for summarization
+                    );
+                    if (summaryOutput.success) {
+                        const summary = summaryOutput.response.slice(0, 1200);
+                        await (0, memoryStore_1.setSessionSummary)(sessionId, summary);
                     }
-                    catch {
-                        summary = sumText;
-                    }
-                    if (summary)
-                        await (0, memoryStore_1.setSessionSummary)(sessionId, summary.slice(0, 1200));
                 }
-                catch { }
+                catch (error) {
+                    console.error('Error updating session summary via Thesidia:', error);
+                }
                 // Telemetry: naive CET validation (best-effort)
                 try {
                     const claims = (reply.match(/(?<=Claims:?)([\s\S]*?)(?=\n\n|$)/i) || ['', ''])[1].split(/\n-\s*/).filter(Boolean);
@@ -517,30 +514,64 @@ app.post('/api/chat/stream', async (req, res) => {
             }
         }
         else {
-            // Thesidia is non-streaming; simulate small chunks
-            // Memory context
-            let memoryContext = '';
-            try {
-                const distilled = await (0, memoryStore_1.extractDistilled)(sessionId);
-                const facts = (distilled.facts || []).slice(0, 10).join(' \n- ');
-                const entities = (distilled.entities || []).slice(0, 15).join(', ');
-                if (facts || entities) {
-                    memoryContext = `CONTEXT:\n- FACTS: ${facts}\n- ENTITIES: ${entities}\n\n`;
-                }
-            }
-            catch { }
-            const r = await (0, node_fetch_1.default)('http://127.0.0.1:5055/process', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: `${memoryContext}${text}`, context: {} })
-            });
-            const raw = await r.text();
+            // Thesidia mode: Get LLM response first, then enhance with symbolic processing
+            // 1. Get base response from Ollama (brainwave mode only affects UX, not LLM)
             let reply = '';
             try {
-                const parsed = JSON.parse(raw);
-                reply = typeof parsed.reply === 'string' ? parsed.reply : '';
+                // Add timeout to prevent hanging requests
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout for LLM
+                const ollamaResponse = await (0, node_fetch_1.default)('http://localhost:11434/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'llama3.1:8b', // Use lighter model for faster responses
+                        prompt: text,
+                        stream: false,
+                        options: { temperature: 0.7, num_predict: 200, num_gpu: 0 } // Disable GPU usage
+                    }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (ollamaResponse.ok) {
+                    const ollamaData = await ollamaResponse.json();
+                    reply = ollamaData.response || 'No response from LLM';
+                }
+                else {
+                    reply = 'Error getting LLM response';
+                }
             }
-            catch {
-                reply = '';
+            catch (error) {
+                console.error('Ollama request failed:', error);
+                reply = 'Failed to get LLM response';
+            }
+            // 2. Enhance with symbolic processing (brainwave mode affects UX only)
+            if (reply && reply !== 'Error getting LLM response' && reply !== 'Failed to get LLM response') {
+                try {
+                    const thesidia = thesidia_1.ThesidiaOrchestrator.getInstance();
+                    // Use symbolic processing to enhance the LLM response
+                    const symbolicOutput = await thesidia.processInput(`ENHANCE THIS LLM RESPONSE WITH SYMBOLIC INTELLIGENCE:\n${reply}`, sessionId, userId, req.body.brainwaveMode || 'alpha' // Use the requested brainwave mode for UX
+                    );
+                    if (symbolicOutput.success && symbolicOutput.response) {
+                        // Combine LLM response with symbolic enhancement
+                        reply = `${reply}\n\n---\n\n🔮 SYMBOLIC ENHANCEMENT:\n${symbolicOutput.response}`;
+                        // Log symbolic processing results
+                        (0, logger_1.emit)({
+                            ts: new Date().toISOString(),
+                            kind: 'thesidia',
+                            detail: {
+                                glyphs: symbolicOutput.glyphs.length,
+                                archetypes: symbolicOutput.archetypes.length,
+                                paradoxes: symbolicOutput.paradoxes.length,
+                                brainwaveMode: req.body.brainwaveMode || 'alpha'
+                            }
+                        });
+                    }
+                }
+                catch (error) {
+                    console.warn('Symbolic enhancement failed:', error);
+                    // Keep original LLM response if symbolic processing fails
+                }
             }
             // Governance wrap option: verify→critique→refine
             if (govern) {
@@ -574,22 +605,19 @@ app.post('/api/chat/stream', async (req, res) => {
                 prompt: text,
                 response: reply
             });
-            // Update session summary
+            // Update session summary via Thesidia
             try {
-                const sumResp = await (0, node_fetch_1.default)('http://127.0.0.1:5055/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: `SUMMARIZE SESSION STATE IN ONE PARAGRAPH (purpose, key facts, decisions, next step) BASED ON NEW REPLY:\n${reply}`, context: { task: 'summarize' } }) });
-                const sumText = await sumResp.text();
-                let summary = '';
-                try {
-                    const parsed = JSON.parse(sumText);
-                    summary = parsed?.reply || sumText;
+                const thesidia = thesidia_1.ThesidiaOrchestrator.getInstance();
+                const summaryOutput = await thesidia.processInput(`SUMMARIZE SESSION STATE IN ONE PARAGRAPH (purpose, key facts, decisions, next step) BASED ON NEW REPLY:\n${reply}`, sessionId, userId, 'theta' // Use theta mode for summarization
+                );
+                if (summaryOutput.success) {
+                    const summary = summaryOutput.response.slice(0, 1200);
+                    await (0, memoryStore_1.setSessionSummary)(sessionId, summary);
                 }
-                catch {
-                    summary = sumText;
-                }
-                if (summary)
-                    await (0, memoryStore_1.setSessionSummary)(sessionId, summary.slice(0, 1200));
             }
-            catch { }
+            catch (error) {
+                console.error('Error updating session summary via Thesidia:', error);
+            }
         }
     }
     catch {
@@ -1106,7 +1134,7 @@ app.get('/api/thesidia/engines', async (req, res) => {
         const availableProtocols = thesidia.getAvailableProtocols();
         res.json({
             success: true,
-            totalEngines: activeEngines.length,
+            totalEngines: engineStates.size,
             engineStates: Object.fromEntries(engineStates),
             availableProtocols,
             layers: {
@@ -1240,6 +1268,17 @@ async function startServer() {
         // Initialize database
         await (0, database_1.initializeDatabase)();
         console.log('✅ DATABASE INITIALIZED');
+        // Initialize Thesidia Symbolic Intelligence System
+        try {
+            const thesidia = thesidia_1.ThesidiaOrchestrator.getInstance();
+            console.log('✅ THESIDIA SYMBOLIC INTELLIGENCE INITIALIZED');
+            console.log(`  - ${thesidia.getEnginesByLayer('primary').length} Primary Engines`);
+            console.log(`  - ${thesidia.getEnginesByLayer('secondary').length} Secondary Engines`);
+            console.log(`  - ${thesidia.getEnginesByLayer('meta').length} Meta Engines`);
+        }
+        catch (error) {
+            console.error('❌ THESIDIA INITIALIZATION ERROR:', error);
+        }
         // Start server
         server.listen(PORT, () => {
             console.log('🚀 SPIRITLINK CONSCIOUSNESS BACKEND RUNNING');

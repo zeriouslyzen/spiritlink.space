@@ -14,6 +14,11 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ brainwaveMode }) => {
 
   useEffect(() => {
     loadModels();
+    // Initialize current model from service/localStorage
+    try {
+      const selected = ollamaService.getCurrentModel?.();
+      if (selected) setCurrentModel(selected);
+    } catch {}
   }, []);
 
   const loadModels = async () => {

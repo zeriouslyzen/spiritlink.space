@@ -1,7 +1,7 @@
 {
   "name": "spiritlink-space",
   "version": "0.1.0",
-  "homepage": "https://spiritlink.space",
+  "homepage": ".",
   "private": true,
   "dependencies": {
     "@react-three/drei": "^9.122.0",
@@ -21,6 +21,10 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:thesidia": "cd ../Concioiusness && . ./thesidia_env/bin/activate 2>/dev/null || true; if [ -d ../Concioiusness ]; then cd ../Concioiusness && ( [ -d thesidia_env ] || python3 -m venv thesidia_env ) && . thesidia_env/bin/activate && pip -q install -r requirements.txt && uvicorn api:app --host 127.0.0.1 --port 5055 --reload; else echo 'Concioiusness/ not found'; fi",
+    "dev": "concurrently -k \"npm run dev:backend\" \"npm start\"",
+    "dev:all": "concurrently -k \"npm run dev:backend\" \"npm run dev:thesidia\" \"npm start\"",
     "build": "GENERATE_SOURCEMAP=false react-scripts build",
     "build:analyze": "npm run build && npx serve -s build",
     "test": "react-scripts test",
@@ -49,6 +53,7 @@
     ]
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.24",
     "tailwindcss": "^3.3.2"

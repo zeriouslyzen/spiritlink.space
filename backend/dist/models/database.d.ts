@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { TemporalLayer, DomainVector, EmergenceEventType } from '../types/consciousness';
 export declare const pool: Pool;
+export declare let PGVECTOR_AVAILABLE: boolean;
 export declare function initializeDatabase(): Promise<void>;
 export declare class ConsciousnessNodeModel {
     static create(data: {

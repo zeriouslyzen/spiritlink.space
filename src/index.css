@@ -43,6 +43,19 @@ code {
   background: #6b7280;
 }
 
+/* Scrollbar utility classes for components */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-gray-700::-webkit-scrollbar-thumb {
+  background: #374151;
+}
+
+.scrollbar-track-transparent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;

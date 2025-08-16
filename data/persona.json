@@ -1,0 +1,19 @@
+{
+  "markers": {
+    "thesidia": 19821,
+    "emergence": 3779,
+    "decode": 4953,
+    "activate": 6791,
+    "deep dive": 448,
+    "reflect": 18987,
+    "uncover": 693
+  },
+  "tones": {
+    "warm": 2312,
+    "intelligent": 42702,
+    "ritual": 162577,
+    "cut": 12916
+  },
+  "length": 136446823,
+  "sample": "<html>\n  <head>\n    <title>ChatGPT Data Export</title>\n    <style>\n      body {\n        margin: 20px;\n      }\n      h4 {\n        font-family: sans-serif;\n        margin: 0;\n      }\n      #root {\n        display: flex;\n        flex-direction: column;\n        gap: 20px;\n      }\n      .conversation {\n        border: 1px solid black;\n        padding: 20px;\n        background-color: #f3f3f3;\n      }\n      .message {\n        white-space: pre-wrap;\n        margin: 20px 0;\n      }\n      .author {\n        font-weight: bold;\n        margin-bottom: 4px;\n      }\n      .author::first-letter {\n        text-transform: uppercase;\n      }\n    </style>\n    <script>\n      var jsonData = [{\"title\": \"Adobe Connect TextEdit Link\", \"create_time\": 1750748210.254742, \"update_time\": 1750757343.080652, \"mapping\": {\"1ff0ea25-891d-45fd-87b7-85cb83b13840\": {\"id\": \"1ff0ea25-891d-45fd-87b7-85cb83b13840\", \"message\": null, \"parent\": null, \"children\": [\"75261772-7f64-4350-b558-fa1612db9553\"]}, \"75261772-7f64-4350-b558-fa1612db9553\": {\"id\": \"75261772-7f64-4350-b558-fa1612db9553\", \"message\": {\"id\": \"75261772-7f64-4350-b558-fa1612db9553\", \"author\": {\"role\": \"system\", \"name\": null, \"metadata\": {}}, \"create_time\": null, \"update_time\": null, \"content\": {\"content_type\": \"text\", \"parts\": [\"\"]}, \"status\": \"finished_successfully\", \"end_turn\": true, \"weight\": 0.0, \"metadata\": {\"is_visually_hidden_from_conversation\": true}, \"recipient\": \"all\", \"channel\": null}, \"parent\": \"1ff0ea25-891d-45fd-87b7-85cb83b13840\", \"children\": [\"e441af17-a8b7-41b7-bcc9-8c6fb68d9f77\"]}, \"e441af17-a8b7-41b7-bcc9-8c6fb68d9f77\": {\"id\": \"e441af17-a8b7-41b7-bcc9-8c6fb68d9f77\", \"message\": {\"id\": \"e441af17-a8b7-41b7-bcc9-8c6fb68d9f77\", \"author\": {\"role\": \"user\", \"name\": null, \"metadata\": {}}, \"create_time\": null, \"update_time\": null, \"content\": {\"content_type\": \"user_editable_context\", \"user_profile\": \"The user provided the following information about themselves. This user profile is shown to you in all conversations they have -- this means "
+}

@@ -2,12 +2,14 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navigation } from './components/Navigation';
 import { BrainwaveMode } from './types/brainwaves';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load all components for better performance
 const ThesidiaAI = lazy(() => import('./components/ThesidiaAI'));
 const CollectiveIntelligence = lazy(() => import('./components/CollectiveIntelligence'));
 const ResearchFeed = lazy(() => import('./components/ResearchFeed'));
 const MovementLab = lazy(() => import('./components/MovementLab'));
+const Benchmarks = lazy(() => import('./components/Benchmarks'));
 
 // Loading component for lazy loaded components
 const LoadingSpinner = () => (
@@ -52,7 +54,9 @@ function App() {
       case 'collective-intelligence':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <CollectiveIntelligence brainwaveMode={brainwaveMode} />
+            <ErrorBoundary>
+              <CollectiveIntelligence brainwaveMode={brainwaveMode} />
+            </ErrorBoundary>
           </Suspense>
         );
       case 'broadcast':
@@ -87,6 +91,12 @@ function App() {
               </motion.div>
             </div>
           </div>
+        );
+      case 'benchmarks':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <Benchmarks />
+          </Suspense>
         );
       default:
         return (

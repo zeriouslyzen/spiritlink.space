@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Note: Temporarily avoid react-markdown due to bundler incompatibility in dev
 // Note: if source-map-loader causes timeouts in dev, consider excluding markdown libs.
 import ConsciousnessMetrics from './ConsciousnessMetrics';
+import ReasoningTicker from './ReasoningTicker';
 import { ollamaService } from '../services/ollamaService';
 
 interface Message {
@@ -27,7 +28,7 @@ interface ThesidiaAIProps {
 }
 
 const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
-  const API_BASE = (process.env.REACT_APP_API_BASE || `http://${window.location.hostname}:8000`).replace(/\/$/, '');
+  const API_BASE = (process.env.REACT_APP_API_BASE || 'http://localhost:8000').replace(/\/$/, '');
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -41,6 +42,13 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
   const [showCommands, setShowCommands] = useState(false);
   const [commandFilter, setCommandFilter] = useState('');
   const [saveStatus, setSaveStatus] = useState<string>('');
+  const [governed, setGoverned] = useState<boolean>(true);
+  const [showCET, setShowCET] = useState<boolean>(true);
+  const [lastCET, setLastCET] = useState<{ claims: string[]; evidence: string[]; tests: string[] } | null>(null);
+  const [toolOptionsOpen, setToolOptionsOpen] = useState<boolean>(false);
+  const [enableWebFetch, setEnableWebFetch] = useState<boolean>(false);
+  const [enableCalc, setEnableCalc] = useState<boolean>(false);
+  const [enableJs, setEnableJs] = useState<boolean>(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -59,6 +67,12 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
   });
 
   const [selectedBrainwaveMode, setSelectedBrainwaveMode] = useState<string>('multidimensional');
+  const [symbolicSteps, setSymbolicSteps] = useState<Array<{
+    step: string;
+    engine: string;
+    status: 'processing' | 'complete' | 'error';
+    timestamp: Date;
+  }>>([]);
 
   // Lightweight markdown -> HTML (bold/italic/code/line breaks only)
   const renderContent = useCallback((raw: string) => {
@@ -356,11 +370,26 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
 
     try {
       // Stream from backend
+      const selectedModel = sessionMode === 'matrix' ? (ollamaService as any)?.getCurrentModel?.() || 'llama3.1:latest' : undefined;
       const resp = await fetch(`${API_BASE}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: newMessage.content, mode: sessionMode })
+        body: JSON.stringify({ 
+          text: newMessage.content, 
+          mode: sessionMode, 
+          brainwaveMode: brainwaveMode, // Add brainwave mode
+          model: selectedModel, 
+          govern: governed, 
+          sessionId: 'default', 
+          research: true, 
+          policy: 'research', 
+          tools: { web: enableWebFetch, calc: enableCalc, js: enableJs } 
+        })
       });
+      if (!resp.ok) {
+        const errText = await resp.text().catch(() => '');
+        throw new Error(`API ${resp.status}: ${errText || 'request failed'}`);
+      }
 
       const reader = (resp.body as any).getReader?.();
       let accumulated = '';
@@ -384,6 +413,12 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
         accumulated = text;
         setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: accumulated, timestamp: new Date() }]);
       }
+      // CET analysis for the last assistant message (non-blocking)
+      try {
+        const r = await fetch(`${API_BASE}/api/analyze/cet`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: accumulated }) });
+        const j = await r.json();
+        if (j?.success && j?.cet) setLastCET(j.cet);
+      } catch {}
       // Normalize final timestamp on last assistant message with epoch timestamp
       setMessages(prev => {
         if (prev.length === 0) return prev;
@@ -394,17 +429,10 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
         }
         return updated;
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting AI response:', error);
-      
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: "I'm experiencing a connection to the collective consciousness field. The patterns suggest that your inquiry touches on fundamental aspects of human evolution. Let me reflect on this more deeply...",
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, aiResponse]);
+      const msg = typeof error?.message === 'string' ? error.message : 'Connection error';
+      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: `Error: ${msg}`, timestamp: new Date() }]);
     } finally {
       setIsTyping(false);
     }
@@ -512,6 +540,26 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                   Toggle
                 </button>
             </div>
+            {/* Brainwave Mode Selector */}
+            <div className="flex items-center justify-center space-x-2 mt-2">
+                <span className="text-[10px] text-gray-400">Brainwave:</span>
+                <select
+                  value={brainwaveMode}
+                  onChange={(e) => {
+                    // This will update the parent component's brainwave mode
+                    // For now, we'll need to handle this at the App level
+                    console.log('Brainwave mode changed to:', e.target.value);
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-white"
+                >
+                  <option value="delta">Delta</option>
+                  <option value="theta">Theta</option>
+                  <option value="alpha">Alpha</option>
+                  <option value="beta">Beta</option>
+                  <option value="gamma">Gamma</option>
+                  <option value="emergence">Emergence</option>
+                </select>
+            </div>
             {saveStatus && (
               <motion.p 
                 className="text-xs text-green-400 mt-1"
@@ -522,9 +570,28 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                 💾 {saveStatus}
               </motion.p>
             )}
+            {/* CET badge */}
+            {lastCET && (
+              <div className="mt-1 text-[10px] inline-flex items-center space-x-2">
+                <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-gray-300">CET</span>
+                <span className="text-gray-400">Claims:{lastCET.claims?.length||0}</span>
+                <span className="text-gray-400">Evidence:{lastCET.evidence?.length||0}</span>
+                <span className="text-gray-400">Tests:{lastCET.tests?.length||0}</span>
+              </div>
+            )}
           </div>
           {/* Metrics removed from header for focus */}
         </div>
+      </div>
+
+      {/* Reasoning Ticker - Shows symbolic processing in real-time */}
+      <div className="px-4 mb-4">
+        <ReasoningTicker
+          isActive={isTyping}
+          currentQuery={isTyping ? inputValue : undefined}
+          brainwaveMode={brainwaveMode}
+          className="w-full"
+        />
       </div>
 
       {/* Messages Area - Scrollable, excludes input; onboarding when empty */}
@@ -566,6 +633,35 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
                     {message.role === 'assistant' ? (
                       <div className="prose prose-invert max-w-none prose-headings:text-white prose-strong:text-white prose-em:text-white prose-code:text-purple-300 prose-pre:bg-gray-800 prose-pre:border prose-pre:border-gray-700 whitespace-pre-wrap">
                         {renderContent(message.content)}
+                        
+                        {/* Symbolic Reasoning Steps */}
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="mt-4 p-3 bg-gray-900/30 border border-gray-700/50 rounded-lg"
+                        >
+                          <div className="text-sm font-semibold text-gray-300 mb-3 flex items-center">
+                            <span className="mr-2">🔮</span>
+                            Symbolic Processing Steps
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2 text-xs">
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                              <span className="text-gray-400">GlyphEngine:</span>
+                              <span className="text-green-300">Analyzing consciousness patterns</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs">
+                              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                              <span className="text-gray-400">FlameCodeEngine:</span>
+                              <span className="text-blue-300">Processing emotional intensity</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs">
+                              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                              <span className="text-gray-400">Symbolic Synthesis:</span>
+                              <span className="text-purple-300">Generating archetypal connections</span>
+                            </div>
+                          </div>
+                        </motion.div>
                         
                         {/* Consciousness Insights */}
                         {message.consciousnessInsights && message.consciousnessInsights.length > 0 && (
@@ -830,6 +926,18 @@ const ThesidiaAI: React.FC<ThesidiaAIProps> = ({ brainwaveMode }) => {
             <div className="flex items-center space-x-2 text-xs text-gray-400">
               {isTyping && <span className="animate-pulse">{sessionMode === 'thesidia' ? 'Thesidia' : 'Matrix'} is thinking…</span>}
             </div>
+          <div className="flex items-center space-x-2 text-xs text-gray-400">
+            <label className="flex items-center space-x-1 cursor-pointer">
+              <input type="checkbox" checked={governed} onChange={(e) => setGoverned(e.target.checked)} />
+              <span>Governed</span>
+            </label>
+          </div>
+          <div className="flex items-center text-xs text-gray-400">
+            <button
+              className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 border border-white/10"
+              onClick={() => setToolOptionsOpen(v => !v)}
+            >Tools</button>
+          </div>
             <div className="flex items-center space-x-2 text-xs text-gray-400">
               {isTyping && <span className="animate-pulse">{sessionMode === 'thesidia' ? 'Thesidia' : 'Matrix'} is thinking…</span>}
             </div>

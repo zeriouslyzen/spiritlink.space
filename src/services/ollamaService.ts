@@ -237,6 +237,24 @@ class OllamaService {
 
   async setModel(modelName: string): Promise<void> {
     this.currentModel = modelName;
+    try {
+      if (typeof window !== 'undefined' && window?.localStorage) {
+        window.localStorage.setItem('ollama-current-model', modelName);
+      }
+    } catch {}
+  }
+
+  getCurrentModel(): string {
+    try {
+      if (typeof window !== 'undefined' && window?.localStorage) {
+        const saved = window.localStorage.getItem('ollama-current-model');
+        if (saved && typeof saved === 'string') {
+          this.currentModel = saved;
+          return saved;
+        }
+      }
+    } catch {}
+    return this.currentModel;
   }
 
   async queryConsciousness(query: ConsciousnessQuery): Promise<ConsciousnessResponse> {

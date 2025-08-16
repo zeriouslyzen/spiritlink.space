@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useMemo, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Sphere } from '@react-three/drei';
@@ -68,6 +68,7 @@ function ConnectionLines({ connection, isActive }: { connection: Connection; isA
 function RotatingSphereContent({ brainwaveMode }: { brainwaveMode: string }) {
   const groupRef = useRef<THREE.Group>(null);
   const [activeNodes, setActiveNodes] = useState<Set<number>>(new Set());
+  const [webglError, setWebglError] = useState(false);
   
   // Generate random points on a sphere
   const points = useMemo(() => {
@@ -119,6 +120,17 @@ function RotatingSphereContent({ brainwaveMode }: { brainwaveMode: string }) {
     return () => clearInterval(interval);
   }, [points.length]);
 
+  // Handle WebGL errors gracefully
+  useEffect(() => {
+    const handleWebGLError = () => {
+      setWebglError(true);
+      console.warn('WebGL context failed, falling back to 2D rendering');
+    };
+
+    window.addEventListener('webglcontextlost', handleWebGLError);
+    return () => window.removeEventListener('webglcontextlost', handleWebGLError);
+  }, []);
+
   // Get animation speed based on brainwave mode
   const getAnimationSpeed = () => {
     switch (brainwaveMode) {
@@ -139,6 +151,39 @@ function RotatingSphereContent({ brainwaveMode }: { brainwaveMode: string }) {
       groupRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.05) * 0.2;
     }
   });
+
+  // 2D Fallback when WebGL fails
+  if (webglError) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-32 h-32 mx-auto mb-4 relative">
+            {/* 2D Network Visualization */}
+            <div className="absolute inset-0 border border-purple-500/30 rounded-full"></div>
+            {Array.from({ length: 12 }).map((_, i) => {
+              const angle = (i * 30 * Math.PI) / 180;
+              const x = 64 + 48 * Math.cos(angle);
+              const y = 64 + 48 * Math.sin(angle);
+              return (
+                <div
+                  key={i}
+                  className={`absolute w-3 h-3 rounded-full transition-all duration-500 ${
+                    activeNodes.has(i) ? 'bg-purple-400 shadow-lg shadow-purple-400/50' : 'bg-gray-600'
+                  }`}
+                  style={{ left: x - 6, top: y - 6 }}
+                />
+              );
+            })}
+            {/* Central node */}
+            <div className={`absolute top-1/2 left-1/2 w-4 h-4 rounded-full transition-all duration-500 ${
+              activeNodes.has(0) ? 'bg-emerald-400 shadow-lg shadow-emerald-400/50' : 'bg-gray-500'
+            }`} style={{ transform: 'translate(-50%, -50%)' }}></div>
+          </div>
+          <p className="text-gray-400 text-sm">2D Network Visualization (WebGL unavailable)</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <group ref={groupRef}>
@@ -174,6 +219,7 @@ const CollectiveIntelligence: React.FC<CollectiveIntelligenceProps> = ({ brainwa
   ]);
 
   const [currentInsight, setCurrentInsight] = useState(0);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -181,6 +227,25 @@ const CollectiveIntelligence: React.FC<CollectiveIntelligenceProps> = ({ brainwa
     }, 3000);
     return () => clearInterval(interval);
   }, [insights.length]);
+
+  // Error boundary fallback
+  if (hasError) {
+    return (
+      <div className="w-full h-full bg-black text-white p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold mb-2">Rendering Error</h2>
+          <p className="text-gray-400 mb-4">The 3D visualization encountered an issue</p>
+          <button 
+            onClick={() => setHasError(false)}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full bg-black text-white p-6">
@@ -215,12 +280,25 @@ const CollectiveIntelligence: React.FC<CollectiveIntelligenceProps> = ({ brainwa
         <div className="glass-dark rounded-2xl p-4">
           <h3 className="text-lg font-semibold mb-4">Consciousness Network</h3>
           <div className="h-[400px] w-full">
-            <Canvas
-              camera={{ position: [0, 0, 3], fov: 60 }}
-              style={{ background: 'transparent' }}
-            >
-              <RotatingSphereContent brainwaveMode={brainwaveMode} />
-            </Canvas>
+            <Suspense fallback={
+              <div className="h-full w-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  <p className="text-gray-400 text-sm">Loading 3D Network...</p>
+                </div>
+              </div>
+            }>
+              <Canvas
+                camera={{ position: [0, 0, 3], fov: 60 }}
+                style={{ background: 'transparent' }}
+                onError={(error) => {
+                  console.warn('Canvas error, falling back to 2D:', error);
+                  setHasError(true);
+                }}
+              >
+                <RotatingSphereContent brainwaveMode={brainwaveMode} />
+              </Canvas>
+            </Suspense>
           </div>
         </div>
 

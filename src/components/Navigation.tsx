@@ -58,6 +58,14 @@ const navigationItems = [
     color: 'from-indigo-500 to-purple-500',
     symbolColor: '#DDA0DD'
   }
+  ,{
+    id: 'benchmarks',
+    name: 'Benchmarks',
+    icon: '🧪',
+    description: 'Model pass-rates and tests',
+    color: 'from-indigo-500 to-purple-500',
+    symbolColor: '#A0AEC0'
+  }
 ];
 
 const BRAINWAVE_MODES = [

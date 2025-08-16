@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LiveConsciousnessModel = exports.CollectiveIntelligenceModel = exports.EmergenceEventModel = exports.ConsciousnessNodeModel = exports.pool = void 0;
+exports.LiveConsciousnessModel = exports.CollectiveIntelligenceModel = exports.EmergenceEventModel = exports.ConsciousnessNodeModel = exports.PGVECTOR_AVAILABLE = exports.pool = void 0;
 exports.initializeDatabase = initializeDatabase;
 const pg_1 = require("pg");
 // Database connection pool
@@ -12,15 +12,38 @@ exports.pool = new pg_1.Pool({
     port: parseInt(process.env.DB_PORT || '5432'),
 });
 // Database initialization
+exports.PGVECTOR_AVAILABLE = false;
 async function initializeDatabase() {
+    // Allow skipping DB in local dev when Postgres isn't available
+    if (process.env.DB_DISABLED === '1') {
+        console.log('⚠️ Database disabled via DB_DISABLED=1; skipping initialization');
+        return;
+    }
     const client = await exports.pool.connect();
     try {
-        // Ensure pgcrypto extension for gen_random_uuid()
+        // Ensure required extensions
         try {
             await client.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
         }
-        catch (e) {
-            // Ignore if extension already exists or unsupported in test env
+        catch { }
+        try {
+            await client.query(`CREATE EXTENSION IF NOT EXISTS vector;`);
+        }
+        catch { }
+        try {
+            await client.query(`CREATE EXTENSION IF NOT EXISTS pg_trgm;`);
+        }
+        catch { }
+        try {
+            await client.query(`CREATE EXTENSION IF NOT EXISTS btree_gin;`);
+        }
+        catch { }
+        try {
+            const chk = await client.query(`SELECT 1 FROM pg_extension WHERE extname='vector'`);
+            exports.PGVECTOR_AVAILABLE = ((chk?.rowCount ?? 0) > 0);
+        }
+        catch {
+            exports.PGVECTOR_AVAILABLE = false;
         }
         // Create consciousness nodes table
         await client.query(`
@@ -74,6 +97,96 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
+        if (exports.PGVECTOR_AVAILABLE) {
+            // Retrieval store: documents
+            await client.query(`
+        CREATE TABLE IF NOT EXISTS documents (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          source TEXT,
+          hash TEXT UNIQUE,
+          title TEXT,
+          mime TEXT,
+          owner_id TEXT,
+          created_at timestamptz DEFAULT now()
+        );
+      `);
+            // Retrieval store: chunks
+            await client.query(`
+        CREATE TABLE IF NOT EXISTS chunks (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          document_id UUID REFERENCES documents(id) ON DELETE CASCADE,
+          text TEXT NOT NULL,
+          embedding vector(1024),
+          embedding_model TEXT DEFAULT 'bge-m3',
+          embedding_dim INT DEFAULT 1024,
+          lang TEXT,
+          span int4range,
+          entities JSONB DEFAULT '[]'::jsonb,
+          sparse_tsv tsvector,
+          created_at timestamptz DEFAULT now()
+        );
+      `);
+            // Retrieval store: entities and link table
+            await client.query(`
+        CREATE TABLE IF NOT EXISTS entities (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          type TEXT,
+          name TEXT,
+          kb_id TEXT,
+          attrs JSONB DEFAULT '{}'::jsonb
+        );
+      `);
+            await client.query(`
+        CREATE TABLE IF NOT EXISTS chunk_entities (
+          chunk_id UUID REFERENCES chunks(id) ON DELETE CASCADE,
+          entity_id UUID REFERENCES entities(id) ON DELETE CASCADE,
+          weight REAL DEFAULT 1.0,
+          PRIMARY KEY (chunk_id, entity_id)
+        );
+      `);
+            // Audit and artifacts
+            await client.query(`
+        CREATE TABLE IF NOT EXISTS audits (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          task_id TEXT,
+          actor TEXT,
+          actor_ip INET,
+          session_id TEXT,
+          action TEXT,
+          payload_hash TEXT,
+          ts timestamptz DEFAULT now()
+        );
+      `);
+            await client.query(`
+        CREATE TABLE IF NOT EXISTS artifacts (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          task_id TEXT,
+          kind TEXT,
+          sha256 TEXT,
+          uri TEXT,
+          lineage JSONB DEFAULT '[]'::jsonb,
+          created_at timestamptz DEFAULT now()
+        );
+      `);
+            // tsvector trigger to keep sparse_tsv updated
+            await client.query(`
+        CREATE OR REPLACE FUNCTION update_sparse_tsv() RETURNS trigger AS $$
+        BEGIN
+          NEW.sparse_tsv := to_tsvector('simple', coalesce(NEW.text,''));
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+            await client.query(`DROP TRIGGER IF EXISTS trg_chunks_sparse ON chunks;`);
+            await client.query(`
+        CREATE TRIGGER trg_chunks_sparse
+        BEFORE INSERT OR UPDATE OF text ON chunks
+        FOR EACH ROW EXECUTE FUNCTION update_sparse_tsv();
+      `);
+        }
+        else {
+            console.warn('⚠️ pgvector extension not available. Skipping retrieval DDL. Set up pgvector and restart.');
+        }
         // Create tunnel paths table
         await client.query(`
       CREATE TABLE IF NOT EXISTS tunnel_paths (
@@ -113,6 +226,58 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
+        // Memory entries (per-user/session)
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS memory_entries (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id VARCHAR(255),
+        session_id VARCHAR(255),
+        mode VARCHAR(50),
+        prompt TEXT,
+        model VARCHAR(255),
+        response TEXT,
+        candidates JSONB,
+        governance_notes JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+        // User skills registry
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS user_skills (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id VARCHAR(255),
+        name VARCHAR(255),
+        trigger JSONB,
+        constraints JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+        // Skill traces
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS skill_traces (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id VARCHAR(255),
+        session_id VARCHAR(255),
+        skill_name VARCHAR(255),
+        input JSONB,
+        output JSONB,
+        confidence FLOAT,
+        evidence JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+        // Contradictions harvested
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS contradictions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id VARCHAR(255),
+        session_id VARCHAR(255),
+        a TEXT,
+        b TEXT,
+        resolved BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
         // Create indexes for performance
         await client.query(`
       CREATE INDEX IF NOT EXISTS idx_consciousness_nodes_concept ON consciousness_nodes(concept);
@@ -126,7 +291,32 @@ async function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS idx_astral_entities_entity_type ON astral_entities(entity_type);
       CREATE INDEX IF NOT EXISTS idx_live_consciousness_sharing_user_id ON live_consciousness_sharing(user_id);
       CREATE INDEX IF NOT EXISTS idx_live_consciousness_sharing_created_at ON live_consciousness_sharing(created_at);
+      CREATE INDEX IF NOT EXISTS idx_memory_entries_user_session ON memory_entries(user_id, session_id);
+      CREATE INDEX IF NOT EXISTS idx_user_skills_user ON user_skills(user_id);
+      CREATE INDEX IF NOT EXISTS idx_skill_traces_user_session ON skill_traces(user_id, session_id);
+      CREATE INDEX IF NOT EXISTS idx_contradictions_user_session ON contradictions(user_id, session_id);
+      ${exports.PGVECTOR_AVAILABLE ? "CREATE INDEX IF NOT EXISTS idx_chunks_sparse_gin ON chunks USING GIN (sparse_tsv);" : ''}
+      ${exports.PGVECTOR_AVAILABLE ? "CREATE INDEX IF NOT EXISTS idx_chunks_lang ON chunks(lang);" : ''}
+      ${exports.PGVECTOR_AVAILABLE ? "CREATE INDEX IF NOT EXISTS idx_documents_owner ON documents(owner_id);" : ''}
     `);
+        if (exports.PGVECTOR_AVAILABLE) {
+            // HNSW index with IVFFLAT fallback
+            try {
+                await client.query(`
+          CREATE INDEX IF NOT EXISTS idx_chunks_embedding_hnsw
+          ON chunks USING hnsw (embedding vector_l2_ops);
+        `);
+            }
+            catch (e) {
+                try {
+                    await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_chunks_embedding_ivfflat
+            ON chunks USING ivfflat (embedding vector_l2_ops) WITH (lists = 200);
+          `);
+                }
+                catch { }
+            }
+        }
         console.log('✅ Database initialized successfully');
     }
     catch (error) {

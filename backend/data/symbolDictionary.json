@@ -1,0 +1,84 @@
+{
+  "symbols": [
+    {
+      "pattern": "####",
+      "occurrences": 741
+    },
+    {
+      "pattern": "---|",
+      "occurrences": 556
+    },
+    {
+      "pattern": "===-",
+      "occurrences": 150
+    },
+    {
+      "pattern": "########",
+      "occurrences": 70
+    },
+    {
+      "pattern": "---------------------------------------------------------------------------",
+      "occurrences": 69
+    },
+    {
+      "pattern": "---------------------",
+      "occurrences": 68
+    },
+    {
+      "pattern": "######",
+      "occurrences": 42
+    },
+    {
+      "pattern": "----",
+      "occurrences": 36
+    },
+    {
+      "pattern": "/^--",
+      "occurrences": 35
+    },
+    {
+      "pattern": "/**/*",
+      "occurrences": 31
+    },
+    {
+      "pattern": "||||",
+      "occurrences": 25
+    },
+    {
+      "pattern": "/`**",
+      "occurrences": 23
+    },
+    {
+      "pattern": "------|",
+      "occurrences": 20
+    },
+    {
+      "pattern": "--------|",
+      "occurrences": 16
+    },
+    {
+      "pattern": "-------",
+      "occurrences": 15
+    },
+    {
+      "pattern": "~~~~~~~~",
+      "occurrences": 15
+    },
+    {
+      "pattern": "~~~~~",
+      "occurrences": 15
+    },
+    {
+      "pattern": "------",
+      "occurrences": 14
+    },
+    {
+      "pattern": "#########################################################################",
+      "occurrences": 12
+    },
+    {
+      "pattern": "-----|",
+      "occurrences": 11
+    }
+  ]
+}
